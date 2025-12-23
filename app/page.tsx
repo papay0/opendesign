@@ -17,9 +17,10 @@
  * - No gradients, glows, or decorative effects
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Sparkles,
   Pencil,
@@ -36,6 +37,7 @@ import {
   SignedIn,
   SignedOut,
   UserButton,
+  useUser,
 } from "@clerk/nextjs";
 
 // ============================================================================
@@ -170,7 +172,7 @@ function Header() {
                 href="/home"
                 className="text-sm bg-[#1A1A1A] text-white px-4 py-2 rounded-lg hover:bg-[#333] transition-colors"
               >
-                Dashboard
+                My Projects
               </Link>
               <UserButton afterSignOutUrl="/" />
             </SignedIn>
@@ -215,7 +217,7 @@ function Header() {
                   href="/home"
                   className="text-sm bg-[#1A1A1A] text-white px-4 py-2 rounded-lg w-fit"
                 >
-                  Dashboard
+                  My Projects
                 </Link>
               </SignedIn>
             </div>
@@ -432,7 +434,7 @@ function CTASection() {
               href="/home"
               className="flex items-center gap-2 bg-[#B8956F] text-white font-medium px-8 py-3.5 rounded-xl hover:bg-[#A6845F] transition-colors text-lg"
             >
-              Go to Dashboard
+              My Projects
               <ArrowRight className="w-5 h-5" />
             </Link>
           </SignedIn>
@@ -505,6 +507,34 @@ function Footer() {
 // ============================================================================
 
 export default function LandingPage() {
+  const { isSignedIn, isLoaded } = useUser();
+  const router = useRouter();
+
+  // Auto-redirect signed-in users to /home
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      router.push("/home");
+    }
+  }, [isLoaded, isSignedIn, router]);
+
+  // Show nothing while checking auth to avoid flash
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-[#B8956F] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // If signed in, show loading while redirecting
+  if (isSignedIn) {
+    return (
+      <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-[#B8956F] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#FAF8F5]">
       <Header />
