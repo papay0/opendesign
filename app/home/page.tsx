@@ -29,9 +29,13 @@ import {
   Loader2,
   FolderOpen,
   Trash2,
+  Smartphone,
+  Monitor,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { Project } from "@/lib/supabase/types";
+import { PlatformSelector } from "./components/PlatformSelector";
+import type { Platform } from "@/lib/constants/platforms";
 
 // ============================================================================
 // Animation Variants
@@ -153,8 +157,16 @@ function ProjectCard({
       onClick={() => router.push(`/home/projects/${project.id}`)}
     >
       {/* Preview area with emoji icon */}
-      <div className="aspect-[4/3] bg-[#F5F2EF] flex items-center justify-center border-b border-[#E8E4E0]">
+      <div className="aspect-[4/3] bg-[#F5F2EF] flex items-center justify-center border-b border-[#E8E4E0] relative">
         <span className="text-6xl">{project.icon || "📱"}</span>
+        {/* Platform indicator */}
+        <div className="absolute top-2 right-2">
+          {project.platform === "desktop" ? (
+            <Monitor className="w-4 h-4 text-[#9A9A9A]" />
+          ) : (
+            <Smartphone className="w-4 h-4 text-[#9A9A9A]" />
+          )}
+        </div>
       </div>
 
       {/* Content */}
@@ -188,23 +200,24 @@ function ProjectCard({
 
 // ============================================================================
 // Component: Prompt Input
-// Inline prompt input for quick project creation
+// Inline prompt input for quick project creation with platform selection
 // ============================================================================
 
 function PromptInput({
   onSubmit,
   isLoading,
 }: {
-  onSubmit: (prompt: string) => Promise<void>;
+  onSubmit: (prompt: string, platform: Platform) => Promise<void>;
   isLoading: boolean;
 }) {
   const [prompt, setPrompt] = useState("");
+  const [platform, setPlatform] = useState<Platform>("mobile");
 
   const handleSubmit = async () => {
     if (!prompt.trim() || isLoading) return;
     const submittedPrompt = prompt.trim();
     setPrompt(""); // Clear input immediately
-    await onSubmit(submittedPrompt);
+    await onSubmit(submittedPrompt, platform);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -221,15 +234,22 @@ function PromptInput({
       animate="visible"
       className="bg-white border border-[#E8E4E0] rounded-2xl p-6 mb-8 shadow-sm"
     >
-      <h2 className="font-serif text-2xl text-[#1A1A1A] mb-4">
-        What would you like to design?
-      </h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-serif text-2xl text-[#1A1A1A]">
+          What would you like to design?
+        </h2>
+        <PlatformSelector selected={platform} onChange={setPlatform} />
+      </div>
       <div className="relative">
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Describe your app idea... (e.g., A fitness tracking app with workout logs and progress charts)"
+          placeholder={
+            platform === "mobile"
+              ? "Describe your app idea... (e.g., A fitness tracking app with workout logs and progress charts)"
+              : "Describe your website... (e.g., A SaaS landing page with pricing, features, and testimonials)"
+          }
           rows={3}
           className="w-full bg-[#F5F2EF] border border-[#E8E4E0] rounded-xl px-4 py-3 pr-28 text-[#1A1A1A] placeholder-[#9A9A9A] focus:outline-none focus:border-[#B8956F] focus:ring-2 focus:ring-[#B8956F]/10 transition-all resize-none"
         />
@@ -303,7 +323,7 @@ export default function DashboardPage() {
   }, [isLoaded, user]);
 
   // Create new project from prompt
-  const handleCreateProject = async (prompt: string) => {
+  const handleCreateProject = async (prompt: string, platform: Platform) => {
     if (!user) return;
 
     setIsCreating(true);
@@ -315,6 +335,7 @@ export default function DashboardPage() {
         user_id: user.id,
         name: "Untitled Project",
         app_idea: prompt,
+        platform: platform,
       })
       .select()
       .single();

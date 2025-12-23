@@ -34,6 +34,7 @@ export interface Database {
           name: string             // Project display name
           app_idea: string | null  // User's initial app description
           icon: string             // Emoji icon for the project
+          platform: 'mobile' | 'desktop'  // Target platform for designs
           created_at: string
           updated_at: string
         }
@@ -43,6 +44,7 @@ export interface Database {
           name: string
           app_idea?: string | null
           icon?: string
+          platform: 'mobile' | 'desktop'  // Required: mobile or desktop
           created_at?: string
           updated_at?: string
         }
@@ -52,6 +54,7 @@ export interface Database {
           name?: string
           app_idea?: string | null
           icon?: string
+          platform?: 'mobile' | 'desktop'
           created_at?: string
           updated_at?: string
         }

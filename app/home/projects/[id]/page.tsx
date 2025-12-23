@@ -580,7 +580,7 @@ export default function DesignPage() {
       return;
     }
 
-    // Start streaming
+    // Start streaming with platform
     await startStreaming(
       "/api/ai/generate-design",
       {
@@ -591,13 +591,14 @@ export default function DesignPage() {
           role: m.role,
           content: m.content,
         })),
+        platform: project?.platform || "mobile",
       },
       {
         "x-api-key": apiConfig.key,
         "x-provider": apiConfig.provider,
       }
     );
-  }, [input, isStreaming, hasApiKey, startStreaming, projectId, savedScreens, messages]);
+  }, [input, isStreaming, hasApiKey, startStreaming, projectId, savedScreens, messages, project?.platform]);
 
   // Store handleSubmit in ref for auto-generation
   submitRef.current = handleSubmit;
@@ -726,6 +727,7 @@ export default function DesignPage() {
           isStreaming={isStreaming}
           editingScreenNames={editingScreenNames}
           isEditingExistingScreen={isEditingExistingScreen}
+          platform={project?.platform || "mobile"}
         />
       </div>
     </div>

@@ -7,16 +7,19 @@
  * Features:
  * - Horizontal layout with zoom/pan (using react-zoom-pan-pinch)
  * - Real-time streaming preview
- * - Completed screens displayed in phone mockups
+ * - Completed screens displayed in phone or browser mockups
+ * - Platform-aware rendering (mobile vs desktop)
  */
 
 import { useRef, useState, useEffect, memo } from "react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
-import { ZoomIn, ZoomOut, RotateCcw, Smartphone, Loader2, Copy, Check } from "lucide-react";
+import { ZoomIn, ZoomOut, RotateCcw, Smartphone, Monitor, Loader2, Copy, Check } from "lucide-react";
 import type { ParsedScreen } from "./StreamingScreenPreview";
+import { BrowserMockup, StreamingBrowserMockup } from "./BrowserMockup";
+import { PLATFORM_CONFIG, type Platform } from "@/lib/constants/platforms";
 
-const PHONE_WIDTH = 390;
-const PHONE_HEIGHT = 844;
+const PHONE_WIDTH = PLATFORM_CONFIG.mobile.width;
+const PHONE_HEIGHT = PLATFORM_CONFIG.mobile.height;
 
 interface DesignCanvasProps {
   completedScreens: ParsedScreen[];
@@ -25,6 +28,7 @@ interface DesignCanvasProps {
   isStreaming: boolean;
   editingScreenNames?: Set<string>;
   isEditingExistingScreen?: boolean;
+  platform: Platform;
 }
 
 /**
@@ -340,17 +344,27 @@ export function DesignCanvas({
   isStreaming,
   editingScreenNames = new Set(),
   isEditingExistingScreen = false,
+  platform,
 }: DesignCanvasProps) {
   const hasScreens = completedScreens.length > 0 || (isStreaming && currentScreenName && !isEditingExistingScreen);
+
+  // Platform-specific settings
+  const isMobile = platform === "mobile";
+  const initialScale = isMobile ? 0.5 : 0.35; // Desktop is larger, so smaller initial scale
+  const PlatformIcon = isMobile ? Smartphone : Monitor;
+  const platformLabel = isMobile ? "app" : "website";
 
   return (
     <div className="flex-1 flex flex-col bg-[#F0EDE8] overflow-hidden">
       {/* Canvas Toolbar */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[#E8E4E0] bg-white/50">
-        <span className="text-sm text-[#6B6B6B]">
-          {completedScreens.length} screen{completedScreens.length !== 1 ? "s" : ""}
-          {isStreaming && currentScreenName && " (streaming...)"}
-        </span>
+        <div className="flex items-center gap-2">
+          <PlatformIcon className="w-4 h-4 text-[#9A9A9A]" />
+          <span className="text-sm text-[#6B6B6B]">
+            {completedScreens.length} screen{completedScreens.length !== 1 ? "s" : ""}
+            {isStreaming && currentScreenName && " (streaming...)"}
+          </span>
+        </div>
         <div className="flex items-center gap-1 text-sm text-[#9A9A9A]">
           <span>Scroll to pan, pinch to zoom</span>
         </div>
@@ -361,7 +375,7 @@ export function DesignCanvas({
         {!hasScreens ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="w-16 h-16 rounded-2xl bg-[#E8E4E0] flex items-center justify-center mb-4">
-              <Smartphone className="w-8 h-8 text-[#9A9A9A]" />
+              <PlatformIcon className="w-8 h-8 text-[#9A9A9A]" />
             </div>
             <h3 className="text-lg font-medium text-[#6B6B6B] mb-2">
               {isStreaming ? "Starting generation..." : "No designs yet"}
@@ -369,7 +383,7 @@ export function DesignCanvas({
             <p className="text-sm text-[#9A9A9A] max-w-md">
               {isStreaming
                 ? "The AI is preparing your designs"
-                : "Enter a prompt to generate your first app design"}
+                : `Enter a prompt to generate your first ${platformLabel} design`}
             </p>
             {isStreaming && (
               <Loader2 className="w-8 h-8 text-[#B8956F] animate-spin mt-6" />
@@ -377,8 +391,8 @@ export function DesignCanvas({
           </div>
         ) : (
           <TransformWrapper
-            initialScale={0.5}
-            minScale={0.2}
+            initialScale={initialScale}
+            minScale={0.1}
             maxScale={2}
             centerOnInit
             limitToBounds={false}
@@ -423,28 +437,51 @@ export function DesignCanvas({
                     minWidth: "max-content",
                   }}
                 >
-                  {/* Completed screens */}
-                  {completedScreens.map((screen) => (
-                    <PhoneMockup
-                      key={screen.name}
-                      screen={screen}
-                      isEditing={editingScreenNames.has(screen.name)}
-                      streamingHtml={getStreamingHtmlForScreen(
-                        screen.name,
-                        currentScreenName,
-                        isEditingExistingScreen,
-                        currentStreamingHtml
-                      )}
-                    />
-                  ))}
+                  {/* Completed screens - render appropriate mockup based on platform */}
+                  {completedScreens.map((screen) =>
+                    isMobile ? (
+                      <PhoneMockup
+                        key={screen.name}
+                        screen={screen}
+                        isEditing={editingScreenNames.has(screen.name)}
+                        streamingHtml={getStreamingHtmlForScreen(
+                          screen.name,
+                          currentScreenName,
+                          isEditingExistingScreen,
+                          currentStreamingHtml
+                        )}
+                      />
+                    ) : (
+                      <BrowserMockup
+                        key={screen.name}
+                        screen={screen}
+                        isEditing={editingScreenNames.has(screen.name)}
+                        streamingHtml={getStreamingHtmlForScreen(
+                          screen.name,
+                          currentScreenName,
+                          isEditingExistingScreen,
+                          currentStreamingHtml
+                        )}
+                      />
+                    )
+                  )}
 
                   {/* Currently streaming NEW screen (not editing existing) */}
-                  {isStreaming && currentScreenName && currentStreamingHtml && !isEditingExistingScreen && (
-                    <StreamingPhoneMockup
-                      html={currentStreamingHtml}
-                      screenName={currentScreenName}
-                    />
-                  )}
+                  {isStreaming &&
+                    currentScreenName &&
+                    currentStreamingHtml &&
+                    !isEditingExistingScreen &&
+                    (isMobile ? (
+                      <StreamingPhoneMockup
+                        html={currentStreamingHtml}
+                        screenName={currentScreenName}
+                      />
+                    ) : (
+                      <StreamingBrowserMockup
+                        html={currentStreamingHtml}
+                        screenName={currentScreenName}
+                      />
+                    ))}
                 </TransformComponent>
               </>
             )}
