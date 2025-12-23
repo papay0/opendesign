@@ -233,6 +233,15 @@ textarea::placeholder {
   }
 }
 
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 @keyframes slide-up {
   from {
     opacity: 0;
@@ -251,4 +260,8 @@ textarea::placeholder {
 
 .animate-slide-up {
   animation: slide-up 0.6s ease forwards;
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
 }

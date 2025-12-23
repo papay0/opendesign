@@ -37,6 +37,7 @@ import { EditableProjectHeader } from "../../components/EditableProjectHeader";
 import { useDesignStreaming, type ParsedScreen } from "../../components/StreamingScreenPreview";
 import { DesignCanvas } from "../../components/DesignCanvas";
 import { CodeView } from "../../components/CodeView";
+import { ProjectSkeleton } from "../../components/Skeleton";
 
 // ============================================================================
 // Types
@@ -630,11 +631,7 @@ export default function DesignPage() {
 
   // Loading state
   if (!isLoaded || isPageLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 text-[#B8956F] animate-spin" />
-      </div>
-    );
+    return <ProjectSkeleton />;
   }
 
   return (

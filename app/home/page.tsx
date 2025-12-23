@@ -35,6 +35,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import type { Project } from "@/lib/supabase/types";
 import { PlatformSelector } from "./components/PlatformSelector";
+import { DashboardSkeleton } from "./components/Skeleton";
 import type { Platform } from "@/lib/constants/platforms";
 
 // ============================================================================
@@ -371,11 +372,7 @@ export default function DashboardPage() {
 
   // Loading state
   if (!isLoaded || isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 text-[#B8956F] animate-spin" />
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   return (
