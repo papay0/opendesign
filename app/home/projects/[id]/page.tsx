@@ -86,25 +86,19 @@ function ChatMessage({
       animate={{ opacity: 1, y: 0 }}
       className={`flex gap-3 ${isUser ? "flex-row-reverse" : ""}`}
     >
-      {/* Avatar */}
-      {isUser && userImageUrl ? (
-        <img
-          src={userImageUrl}
-          alt="You"
-          className="w-8 h-8 rounded-full flex-shrink-0 object-cover"
-        />
-      ) : (
-        <div
-          className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-            isUser ? "bg-[#B8956F]" : "bg-[#1A1A1A]"
-          }`}
-        >
-          {isUser ? (
+      {/* Avatar - only for user messages */}
+      {isUser && (
+        userImageUrl ? (
+          <img
+            src={userImageUrl}
+            alt="You"
+            className="w-8 h-8 rounded-full flex-shrink-0 object-cover"
+          />
+        ) : (
+          <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-[#B8956F]">
             <User className="w-4 h-4 text-white" />
-          ) : (
-            <Sparkles className="w-4 h-4 text-white" />
-          )}
-        </div>
+          </div>
+        )
       )}
 
       {/* Message Content */}
@@ -686,11 +680,7 @@ export default function DesignPage() {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="flex gap-3"
               >
-                <div className="w-8 h-8 rounded-full bg-[#1A1A1A] flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-white" />
-                </div>
                 <div className="bg-white border border-[#E8E4E0] rounded-2xl px-4 py-3">
                   <div className="flex items-center gap-2 text-sm text-[#6B6B6B]">
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -705,11 +695,7 @@ export default function DesignPage() {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0 }}
-                className="flex gap-3"
               >
-                <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center">
-                  <CheckCircle2 className="w-4 h-4 text-white" />
-                </div>
                 <div className="bg-green-50 border border-green-200 rounded-2xl px-4 py-3">
                   <div className="flex items-center gap-2 text-sm text-green-700">
                     <CheckCircle2 className="w-4 h-4" />
