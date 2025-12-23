@@ -45,7 +45,7 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     // Parse request body
-    const { prompt, existingScreens, conversationHistory, platform } = await request.json();
+    const { prompt, existingScreens, conversationHistory, platform, imageUrl } = await request.json();
 
     if (!prompt) {
       return new Response(
@@ -111,17 +111,50 @@ IMPORTANT:
       model = openrouter.chat("google/gemini-3-pro-preview");
     }
 
-    // Build messages array
-    const messages: Array<{ role: "user" | "assistant"; content: string }> = [];
+    // Build messages array with support for multimodal content
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const messages: any[] = [];
 
     // Add conversation history for context (last 6 messages)
     if (conversationHistory && Array.isArray(conversationHistory)) {
       const recentHistory = conversationHistory.slice(-6);
-      messages.push(...recentHistory);
+      for (const msg of recentHistory) {
+        // Include images from history if present
+        if (msg.role === "user" && msg.imageUrl) {
+          messages.push({
+            role: "user" as const,
+            content: [
+              { type: "text" as const, text: msg.content },
+              { type: "image" as const, image: msg.imageUrl },
+            ],
+          });
+        } else if (msg.role === "user") {
+          messages.push({
+            role: "user" as const,
+            content: msg.content,
+          });
+        } else {
+          messages.push({
+            role: "assistant" as const,
+            content: msg.content,
+          });
+        }
+      }
     }
 
-    // Add the current user message
-    messages.push({ role: "user", content: userPrompt });
+    // Add the current user message (with optional image)
+    if (imageUrl) {
+      console.log(`[Design Stream] Including reference image: ${imageUrl.substring(0, 80)}...`);
+      messages.push({
+        role: "user" as const,
+        content: [
+          { type: "text" as const, text: userPrompt },
+          { type: "image" as const, image: imageUrl },
+        ],
+      });
+    } else {
+      messages.push({ role: "user" as const, content: userPrompt });
+    }
 
     console.log("[Design Stream] Creating SSE stream...");
 

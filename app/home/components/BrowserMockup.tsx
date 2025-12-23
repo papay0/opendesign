@@ -131,19 +131,13 @@ export const BrowserMockup = memo(function BrowserMockup({
           </div>
         )}
 
-        {/* Browser Chrome */}
-        <div className="h-10 bg-[#F5F2EF] border-b border-[#E8E4E0] flex items-center px-4 gap-3">
+        {/* Window Chrome */}
+        <div className="h-10 bg-[#F5F2EF] border-b border-[#E8E4E0] flex items-center px-4">
           {/* Traffic lights */}
           <div className="flex gap-2">
             <div className="w-3 h-3 rounded-full bg-[#FF5F57]" />
             <div className="w-3 h-3 rounded-full bg-[#FEBC2E]" />
             <div className="w-3 h-3 rounded-full bg-[#28C840]" />
-          </div>
-          {/* URL bar */}
-          <div className="flex-1 h-6 bg-white rounded-md border border-[#E8E4E0] flex items-center px-3">
-            <span className="text-xs text-[#9A9A9A]">
-              yourwebsite.com/{screen.name.toLowerCase().replace(/\s+/g, "-")}
-            </span>
           </div>
         </div>
 
@@ -284,23 +278,17 @@ export const StreamingBrowserMockup = memo(function StreamingBrowserMockup({
           Generating {screenName}...
         </div>
 
-        {/* Browser Chrome */}
-        <div className="h-10 bg-[#F5F2EF] border-b border-[#E8E4E0] flex items-center px-4 gap-3">
+        {/* Window Chrome */}
+        <div className="h-10 bg-[#F5F2EF] border-b border-[#E8E4E0] flex items-center px-4">
           {/* Traffic lights */}
           <div className="flex gap-2">
             <div className="w-3 h-3 rounded-full bg-[#FF5F57]" />
             <div className="w-3 h-3 rounded-full bg-[#FEBC2E]" />
             <div className="w-3 h-3 rounded-full bg-[#28C840]" />
           </div>
-          {/* URL bar */}
-          <div className="flex-1 h-6 bg-white rounded-md border border-[#E8E4E0] flex items-center px-3">
-            <span className="text-xs text-[#9A9A9A]">
-              yourwebsite.com/{screenName.toLowerCase().replace(/\s+/g, "-")}
-            </span>
-          </div>
         </div>
 
-        {/* Browser Content */}
+        {/* Window Content */}
         <div style={{ width: BROWSER_WIDTH, height: BROWSER_HEIGHT }}>
           <iframe
             ref={iframeRef}

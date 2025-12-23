@@ -36,7 +36,13 @@ import { createClient } from "@/lib/supabase/client";
 import type { Project } from "@/lib/supabase/types";
 import { PlatformSelector } from "./components/PlatformSelector";
 import { DashboardSkeleton } from "./components/Skeleton";
+import { ImageUploadButton } from "./components/ImageUploadButton";
+import { ImageLightbox, ClickableImage } from "./components/ImageLightbox";
 import type { Platform } from "@/lib/constants/platforms";
+import {
+  validateImage,
+  uploadImage,
+} from "@/lib/upload/image-upload";
 
 // ============================================================================
 // Animation Variants
@@ -207,18 +213,27 @@ function ProjectCard({
 function PromptInput({
   onSubmit,
   isLoading,
+  userId,
 }: {
-  onSubmit: (prompt: string, platform: Platform) => Promise<void>;
+  onSubmit: (prompt: string, platform: Platform, imageUrl: string | null) => Promise<void>;
   isLoading: boolean;
+  userId: string;
 }) {
   const [prompt, setPrompt] = useState("");
   const [platform, setPlatform] = useState<Platform>("mobile");
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [isPasting, setIsPasting] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  // Generate a temporary project ID for uploading before project creation
+  const [tempProjectId] = useState(() => crypto.randomUUID());
 
   const handleSubmit = async () => {
     if (!prompt.trim() || isLoading) return;
     const submittedPrompt = prompt.trim();
+    const submittedImageUrl = imageUrl;
     setPrompt(""); // Clear input immediately
-    await onSubmit(submittedPrompt, platform);
+    setImageUrl(null); // Clear image
+    await onSubmit(submittedPrompt, platform, submittedImageUrl);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -228,50 +243,169 @@ function PromptInput({
     }
   };
 
+  const handlePaste = async (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    // Find image in clipboard
+    for (const item of items) {
+      if (item.type.startsWith("image/")) {
+        e.preventDefault(); // Prevent default paste behavior for images
+
+        const file = item.getAsFile();
+        if (!file) return;
+
+        // Validate
+        const validationError = validateImage(file);
+        if (validationError) {
+          alert(validationError.message);
+          return;
+        }
+
+        // Upload
+        setIsPasting(true);
+        try {
+          const result = await uploadImage(file, userId, tempProjectId);
+          setImageUrl(result.url);
+        } catch (err) {
+          alert(err instanceof Error ? err.message : "Upload failed");
+        } finally {
+          setIsPasting(false);
+        }
+        return;
+      }
+    }
+  };
+
   return (
     <motion.div
       variants={fadeInUp}
       initial="hidden"
       animate="visible"
-      className="bg-white border border-[#E8E4E0] rounded-2xl p-6 mb-8 shadow-sm"
+      className="group/card relative bg-white rounded-3xl mb-8 shadow-[0_4px_24px_-4px_rgba(184,149,111,0.15)] hover:shadow-[0_8px_32px_-4px_rgba(184,149,111,0.2)] transition-shadow duration-500"
     >
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="font-serif text-2xl text-[#1A1A1A]">
-          What would you like to design?
-        </h2>
-        <PlatformSelector selected={platform} onChange={setPlatform} />
+      {/* Subtle gradient border effect */}
+      <div className="absolute inset-0 rounded-3xl bg-gradient-to-b from-[#E8E4E0] to-[#D4CFC9]/50 p-px">
+        <div className="h-full w-full rounded-3xl bg-white" />
       </div>
-      <div className="relative">
-        <textarea
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={
-            platform === "mobile"
-              ? "Describe your app idea... (e.g., A fitness tracking app with workout logs and progress charts)"
-              : "Describe your website... (e.g., A SaaS landing page with pricing, features, and testimonials)"
-          }
-          rows={3}
-          className="w-full bg-[#F5F2EF] border border-[#E8E4E0] rounded-xl px-4 py-3 pr-28 text-[#1A1A1A] placeholder-[#9A9A9A] focus:outline-none focus:border-[#B8956F] focus:ring-2 focus:ring-[#B8956F]/10 transition-all resize-none"
-        />
-        <button
-          onClick={handleSubmit}
-          disabled={!prompt.trim() || isLoading}
-          className="absolute bottom-3 right-3 inline-flex items-center gap-2 bg-[#B8956F] text-white font-medium px-4 py-2 rounded-lg hover:bg-[#A6845F] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Creating...
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-4 h-4" />
-              Design it
-            </>
+
+      {/* Content */}
+      <div className="relative p-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h2 className="font-serif text-2xl text-[#1A1A1A] tracking-tight">
+              What would you like to design?
+            </h2>
+            <p className="text-sm text-[#9A9A9A] mt-0.5">Describe your vision and let AI bring it to life</p>
+          </div>
+          <PlatformSelector selected={platform} onChange={setPlatform} />
+        </div>
+
+        {/* Image preview - elegant card when attached */}
+        {imageUrl && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4"
+          >
+            <div className="flex items-center gap-4 p-3 bg-gradient-to-r from-[#FAF8F5] to-[#F5F2EF] rounded-2xl border border-[#E8E4E0]">
+              <div className="relative">
+                <ClickableImage
+                  src={imageUrl}
+                  alt="Reference"
+                  className="w-16 h-16 rounded-xl shadow-sm ring-2 ring-white overflow-hidden"
+                  onClick={() => setLightboxImage(imageUrl)}
+                />
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-[#B8956F] rounded-full flex items-center justify-center shadow-sm pointer-events-none">
+                  <Sparkles className="w-3 h-3 text-white" />
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-[#1A1A1A]">Style reference attached</p>
+                <p className="text-xs text-[#9A9A9A]">Click to preview • AI will match this aesthetic</p>
+              </div>
+              <button
+                onClick={() => setImageUrl(null)}
+                className="text-xs text-[#9A9A9A] hover:text-red-500 px-3 py-1.5 rounded-lg hover:bg-white transition-all border border-transparent hover:border-red-100"
+                type="button"
+              >
+                Remove
+              </button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Input area */}
+        <div className="relative">
+          <textarea
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
+            placeholder={
+              platform === "mobile"
+                ? "A fitness tracking app with workout logs, progress charts, and a motivating design..."
+                : "A modern SaaS landing page with bold typography, feature highlights, and social proof..."
+            }
+            rows={3}
+            disabled={isPasting}
+            className="w-full bg-[#FAF8F5] rounded-2xl px-5 py-4 text-[#1A1A1A] placeholder-[#B5B0A8] focus:outline-none focus:ring-2 focus:ring-[#B8956F]/20 focus:bg-white resize-none transition-all border border-[#E8E4E0] focus:border-[#B8956F]/30 disabled:opacity-60"
+          />
+          {/* Paste upload overlay */}
+          {isPasting && (
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+              <div className="flex items-center gap-2 text-[#B8956F]">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span className="text-sm font-medium">Uploading image...</span>
+              </div>
+            </div>
           )}
-        </button>
+        </div>
+
+        {/* Bottom toolbar with subtle separator */}
+        <div className="flex items-center justify-between mt-4 pt-4 border-t border-[#E8E4E0]/60">
+          <div className="flex items-center gap-3">
+            {/* Hide upload button when image is attached (shown in preview card above) */}
+            {!imageUrl && (
+              <ImageUploadButton
+                userId={userId}
+                projectId={tempProjectId}
+                onImageUploaded={setImageUrl}
+                onImageRemoved={() => setImageUrl(null)}
+                currentImageUrl={null}
+                disabled={isLoading}
+              />
+            )}
+            {!imageUrl && (
+              <span className="text-xs text-[#B5B0A8] hidden sm:block">Add a style reference or paste an image</span>
+            )}
+          </div>
+          <button
+            onClick={handleSubmit}
+            disabled={!prompt.trim() || isLoading}
+            className="inline-flex items-center gap-2.5 bg-gradient-to-r from-[#B8956F] to-[#A6845F] text-white font-medium px-6 py-3 rounded-xl hover:from-[#A6845F] hover:to-[#957555] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg hover:shadow-[#B8956F]/20 active:scale-[0.98]"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Creating...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4" />
+                <span>Design it</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
+
+      {/* Image Lightbox Modal */}
+      <ImageLightbox
+        src={lightboxImage}
+        onClose={() => setLightboxImage(null)}
+      />
     </motion.div>
   );
 }
@@ -324,7 +458,7 @@ export default function DashboardPage() {
   }, [isLoaded, user]);
 
   // Create new project from prompt
-  const handleCreateProject = async (prompt: string, platform: Platform) => {
+  const handleCreateProject = async (prompt: string, platform: Platform, imageUrl: string | null) => {
     if (!user) return;
 
     setIsCreating(true);
@@ -337,6 +471,7 @@ export default function DashboardPage() {
         name: "Untitled Project",
         app_idea: prompt,
         platform: platform,
+        initial_image_url: imageUrl,
       })
       .select()
       .single();
@@ -396,8 +531,8 @@ export default function DashboardPage() {
       {!hasApiKey && <ApiKeyBanner />}
 
       {/* Prompt Input (only show if API key is configured) */}
-      {hasApiKey && (
-        <PromptInput onSubmit={handleCreateProject} isLoading={isCreating} />
+      {hasApiKey && user && (
+        <PromptInput onSubmit={handleCreateProject} isLoading={isCreating} userId={user.id} />
       )}
 
       {/* Projects Section */}

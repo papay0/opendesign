@@ -144,7 +144,7 @@ function Header() {
               </span>
             </span>
             <a
-              href="https://github.com/yourusername/opendesign"
+              href="https://github.com/papay0/opendesign"
               target="_blank"
               rel="noopener noreferrer"
               className="text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors"
@@ -439,7 +439,7 @@ function CTASection() {
             </Link>
           </SignedIn>
           <a
-            href="https://github.com/yourusername/opendesign"
+            href="https://github.com/papay0/opendesign"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 px-6 py-3.5 rounded-xl transition-colors"
@@ -474,27 +474,27 @@ function Footer() {
           {/* Links */}
           <div className="flex items-center gap-6 text-sm text-[#6B6B6B]">
             <a
-              href="https://github.com/yourusername/opendesign"
+              href="https://github.com/papay0/opendesign"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-[#1A1A1A] transition-colors"
             >
               GitHub
             </a>
-            <a
-              href="https://twitter.com/opendesign"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-[#1A1A1A] transition-colors"
-            >
-              Twitter
-            </a>
             <span className="text-[#9A9A9A]">MIT License</span>
           </div>
 
-          {/* Copyright */}
-          <p className="text-sm text-[#9A9A9A]">
-            © {new Date().getFullYear()} OpenDesign
+          {/* Built by */}
+          <p className="text-sm text-[#6B6B6B]">
+            Built by{" "}
+            <a
+              href="https://x.com/papay0"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#1A1A1A] hover:text-[#B8956F] transition-colors"
+            >
+              @papay0
+            </a>
           </p>
         </div>
       </div>

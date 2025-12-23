@@ -30,9 +30,28 @@ export function DashboardSkeleton() {
         <Skeleton className="h-5 w-48" />
       </div>
 
-      {/* Prompt Input */}
-      <div className="mb-8">
-        <Skeleton className="h-14 w-full rounded-2xl" />
+      {/* Prompt Input - Matches new elevated card design */}
+      <div className="relative bg-white rounded-3xl mb-8 shadow-[0_4px_24px_-4px_rgba(184,149,111,0.15)] p-6">
+        {/* Header with title and platform selector */}
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <Skeleton className="h-7 w-64 mb-2" />
+            <Skeleton className="h-4 w-56" />
+          </div>
+          <Skeleton className="h-10 w-44 rounded-xl" />
+        </div>
+
+        {/* Textarea area */}
+        <Skeleton className="h-24 w-full rounded-2xl mb-4" />
+
+        {/* Bottom toolbar with separator */}
+        <div className="flex items-center justify-between pt-4 border-t border-[#E8E4E0]/60">
+          <div className="flex items-center gap-3">
+            <Skeleton className="w-11 h-11 rounded-xl" />
+            <Skeleton className="h-4 w-44 hidden sm:block" />
+          </div>
+          <Skeleton className="h-12 w-32 rounded-xl" />
+        </div>
       </div>
 
       {/* Projects Section */}
@@ -40,25 +59,24 @@ export function DashboardSkeleton() {
         <Skeleton className="h-8 w-36 mb-6" />
 
         {/* Project Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className="bg-white border border-[#E8E4E0] rounded-2xl p-4"
+              className="bg-white border border-[#E8E4E0] rounded-2xl overflow-hidden"
             >
-              {/* Icon and title */}
-              <div className="flex items-start gap-3 mb-3">
-                <Skeleton className="w-10 h-10 rounded-xl flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <Skeleton className="h-5 w-3/4 mb-2" />
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-2/3 mt-1" />
-                </div>
+              {/* Preview area with emoji */}
+              <div className="aspect-[4/3] bg-[#F5F2EF] flex items-center justify-center border-b border-[#E8E4E0]">
+                <Skeleton className="w-16 h-16 rounded-2xl" />
               </div>
-              {/* Footer */}
-              <div className="flex items-center justify-between pt-3 border-t border-[#F5F2EF]">
-                <Skeleton className="h-4 w-20" />
-                <Skeleton className="h-8 w-8 rounded-lg" />
+              {/* Content */}
+              <div className="p-4">
+                <Skeleton className="h-5 w-3/4 mb-2" />
+                <Skeleton className="h-4 w-full mb-3" />
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-6 w-6 rounded" />
+                </div>
               </div>
             </div>
           ))}
@@ -82,8 +100,9 @@ export function ProjectSkeleton() {
             <Skeleton className="h-4 w-48" />
           </div>
         </div>
-        <div className="ml-auto">
-          <Skeleton className="h-9 w-44 rounded-lg" />
+        <div className="ml-auto flex items-center gap-2">
+          <Skeleton className="h-9 w-24 rounded-lg" />
+          <Skeleton className="h-9 w-24 rounded-lg" />
         </div>
       </div>
 
@@ -94,23 +113,27 @@ export function ProjectSkeleton() {
           {/* Messages area */}
           <div className="flex-1 p-4 space-y-4">
             {/* User message */}
-            <div className="flex gap-3 flex-row-reverse">
-              <Skeleton className="w-8 h-8 rounded-full flex-shrink-0" />
+            <div className="flex justify-end">
               <Skeleton className="h-16 w-3/4 rounded-2xl" />
             </div>
             {/* Assistant message */}
-            <div className="flex gap-3">
+            <div className="flex">
               <Skeleton className="h-24 w-full rounded-2xl" />
             </div>
             {/* Another user message */}
-            <div className="flex gap-3 flex-row-reverse">
-              <Skeleton className="w-8 h-8 rounded-full flex-shrink-0" />
+            <div className="flex justify-end">
               <Skeleton className="h-12 w-2/3 rounded-2xl" />
             </div>
           </div>
-          {/* Input area */}
-          <div className="p-4 border-t border-[#E8E4E0]">
-            <Skeleton className="h-12 w-full rounded-xl" />
+          {/* Input area - Matches unified container design */}
+          <div className="p-3 border-t border-[#E8E4E0]">
+            <div className="bg-[#F5F2EF] rounded-2xl border border-[#E8E4E0] p-2">
+              <div className="flex items-end gap-2">
+                <Skeleton className="w-11 h-11 rounded-xl flex-shrink-0" />
+                <Skeleton className="h-10 flex-1 rounded-lg" />
+                <Skeleton className="w-10 h-10 rounded-xl flex-shrink-0" />
+              </div>
+            </div>
           </div>
         </div>
 

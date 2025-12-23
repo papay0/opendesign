@@ -35,6 +35,7 @@ export interface Database {
           app_idea: string | null  // User's initial app description
           icon: string             // Emoji icon for the project
           platform: 'mobile' | 'desktop'  // Target platform for designs
+          initial_image_url: string | null  // Reference image attached during creation
           created_at: string
           updated_at: string
         }
@@ -45,6 +46,7 @@ export interface Database {
           app_idea?: string | null
           icon?: string
           platform: 'mobile' | 'desktop'  // Required: mobile or desktop
+          initial_image_url?: string | null  // Reference image attached during creation
           created_at?: string
           updated_at?: string
         }
@@ -55,6 +57,7 @@ export interface Database {
           app_idea?: string | null
           icon?: string
           platform?: 'mobile' | 'desktop'
+          initial_image_url?: string | null  // Reference image attached during creation
           created_at?: string
           updated_at?: string
         }
@@ -114,6 +117,7 @@ export interface Database {
           project_id: string              // Foreign key to projects
           role: 'user' | 'assistant'      // Message sender
           content: string                 // Message text
+          image_url: string | null        // Optional reference image URL
           created_at: string
         }
         Insert: {
@@ -121,6 +125,7 @@ export interface Database {
           project_id: string
           role: 'user' | 'assistant'
           content: string
+          image_url?: string | null       // Optional reference image URL
           created_at?: string
         }
         Update: {
@@ -128,6 +133,7 @@ export interface Database {
           project_id?: string
           role?: 'user' | 'assistant'
           content?: string
+          image_url?: string | null       // Optional reference image URL
           created_at?: string
         }
         Relationships: [

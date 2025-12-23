@@ -39,6 +39,11 @@ import { DesignCanvas } from "../../components/DesignCanvas";
 import { CodeView } from "../../components/CodeView";
 import { ProjectSkeleton } from "../../components/Skeleton";
 import { ImageUploadButton } from "../../components/ImageUploadButton";
+import { ImageLightbox, ClickableImage } from "../../components/ImageLightbox";
+import {
+  validateImage,
+  uploadImage,
+} from "@/lib/upload/image-upload";
 
 // ============================================================================
 // Types
@@ -82,9 +87,11 @@ function getApiConfig(): { key: string; provider: string } | null {
 function ChatMessage({
   message,
   userImageUrl,
+  onImageClick,
 }: {
   message: Message;
   userImageUrl?: string;
+  onImageClick?: (imageUrl: string) => void;
 }) {
   const isUser = message.role === "user";
 
@@ -117,13 +124,14 @@ function ChatMessage({
             : "bg-white border border-[#E8E4E0]"
         }`}
       >
-        {/* Attached image */}
+        {/* Attached image - clickable */}
         {message.imageUrl && (
           <div className="mb-2">
-            <img
+            <ClickableImage
               src={message.imageUrl}
               alt="Reference"
-              className="max-w-[180px] max-h-[180px] object-cover rounded-lg"
+              className="max-w-[180px] max-h-[180px] rounded-lg overflow-hidden"
+              onClick={() => onImageClick?.(message.imageUrl!)}
             />
           </div>
         )}
@@ -149,6 +157,7 @@ function ChatInput({
   projectId,
   imageUrl,
   onImageChange,
+  onImageClick,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -159,8 +168,10 @@ function ChatInput({
   projectId: string;
   imageUrl: string | null;
   onImageChange: (url: string | null) => void;
+  onImageClick?: (imageUrl: string) => void;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [isPasting, setIsPasting] = useState(false);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -179,6 +190,40 @@ function ChatInput({
     }
   };
 
+  const handlePaste = async (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    // Find image in clipboard
+    for (const item of items) {
+      if (item.type.startsWith("image/")) {
+        e.preventDefault();
+
+        const file = item.getAsFile();
+        if (!file) return;
+
+        // Validate
+        const validationError = validateImage(file);
+        if (validationError) {
+          alert(validationError.message);
+          return;
+        }
+
+        // Upload
+        setIsPasting(true);
+        try {
+          const result = await uploadImage(file, userId, projectId);
+          onImageChange(result.url);
+        } catch (err) {
+          alert(err instanceof Error ? err.message : "Upload failed");
+        } finally {
+          setIsPasting(false);
+        }
+        return;
+      }
+    }
+  };
+
   return (
     <div className="border-t border-[#E8E4E0] p-3 bg-white">
       {/* Unified input container */}
@@ -187,10 +232,11 @@ function ChatInput({
         {imageUrl && (
           <div className="px-3 pt-3 pb-1">
             <div className="flex items-center gap-2.5 p-2 bg-white/60 rounded-lg border border-[#E8E4E0]/50">
-              <img
+              <ClickableImage
                 src={imageUrl}
                 alt="Reference"
-                className="w-10 h-10 object-cover rounded-md shadow-sm"
+                className="w-10 h-10 rounded-md shadow-sm overflow-hidden"
+                onClick={() => onImageClick?.(imageUrl)}
               />
               <span className="text-sm text-[#6B6B6B] flex-1">Reference image</span>
               <button
@@ -205,32 +251,33 @@ function ChatInput({
         )}
 
         {/* Input row */}
-        <div className="flex items-end gap-2 p-2">
+        <div className="flex items-end gap-2 p-2 relative">
           <ImageUploadButton
             userId={userId}
             projectId={projectId}
             onImageUploaded={onImageChange}
             onImageRemoved={() => onImageChange(null)}
             currentImageUrl={imageUrl}
-            disabled={disabled || isLoading}
+            disabled={disabled || isLoading || isPasting}
           />
           <textarea
             ref={textareaRef}
             value={value}
             onChange={(e) => onChange(e.target.value)}
             onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
             placeholder={
               disabled
                 ? "Configure your API key in Settings first..."
-                : "Describe changes or add new screens..."
+                : "Describe changes or paste an image..."
             }
-            disabled={disabled}
+            disabled={disabled || isPasting}
             rows={1}
             className="flex-1 bg-transparent py-2.5 px-1 text-[#1A1A1A] placeholder-[#9A9A9A] focus:outline-none resize-none max-h-32 disabled:opacity-50 disabled:cursor-not-allowed"
           />
           <button
             onClick={onSubmit}
-            disabled={disabled || isLoading || !value.trim()}
+            disabled={disabled || isLoading || isPasting || !value.trim()}
             className="w-10 h-10 bg-[#B8956F] rounded-xl flex items-center justify-center hover:bg-[#A6845F] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 shadow-sm hover:shadow-md active:scale-95"
           >
             {isLoading ? (
@@ -239,6 +286,15 @@ function ChatInput({
               <Send className="w-4 h-4 text-white" />
             )}
           </button>
+          {/* Paste upload overlay */}
+          {isPasting && (
+            <div className="absolute inset-0 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center z-10">
+              <div className="flex items-center gap-2 text-[#B8956F]">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span className="text-sm font-medium">Uploading...</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -300,10 +356,9 @@ export default function DesignPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("preview");
   const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_DEFAULT_WIDTH);
   const [isResizing, setIsResizing] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const userMessageRef = useRef<Message | null>(null);
-  const pendingProjectNameRef = useRef<string | null>(null);
-  const pendingProjectIconRef = useRef<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Handle sidebar resize
@@ -423,12 +478,18 @@ export default function DesignPage() {
       });
     },
     onProjectName: (name: string) => {
-      // Store in ref for later - we'll update after streaming completes
-      pendingProjectNameRef.current = name;
+      // Update immediately if project name is still "Untitled Project"
+      if (project?.name === "Untitled Project") {
+        console.log(`[Page] Updating project name immediately: "${name}"`);
+        handleNameChange(name);
+      }
     },
     onProjectIcon: (icon: string) => {
-      // Store in ref for later - we'll update after streaming completes
-      pendingProjectIconRef.current = icon;
+      // Update immediately if icon is still default
+      if (project?.icon === "📱") {
+        console.log(`[Page] Updating project icon immediately: "${icon}"`);
+        handleIconChange(icon);
+      }
     },
     onScreenStart: (screenName: string) => {
       // New screen started - add to editing set
@@ -455,9 +516,8 @@ export default function DesignPage() {
       // Clear all editing states
       setEditingScreenNames(new Set());
 
-      // Show completion indicator
+      // Show completion indicator (stays until next message)
       setJustCompleted(true);
-      setTimeout(() => setJustCompleted(false), 3000);
 
       // Merge new screens with existing saved screens
       // - Update screens with matching names
@@ -501,25 +561,7 @@ export default function DesignPage() {
         );
       }
 
-      // Update project name and icon if suggested
-      const suggestedName = pendingProjectNameRef.current;
-      const suggestedIcon = pendingProjectIconRef.current;
-
-      if (suggestedName && project?.name === "Untitled Project") {
-        await handleNameChange(suggestedName);
-        pendingProjectNameRef.current = null;
-      }
-
-      // Update icon if suggested and current is default
-      if (suggestedIcon && project?.icon === "📱") {
-        const supabaseForIcon = createClient();
-        await supabaseForIcon
-          .from("projects")
-          .update({ icon: suggestedIcon, updated_at: new Date().toISOString() })
-          .eq("id", projectId);
-        setProject((prev) => (prev ? { ...prev, icon: suggestedIcon } : null));
-        pendingProjectIconRef.current = null;
-      }
+      // Project name and icon are now updated immediately in onProjectName/onProjectIcon callbacks
     },
     onError: (error: string) => {
       const errorMessage: Message = {
@@ -530,7 +572,7 @@ export default function DesignPage() {
       };
       setMessages((prev) => [...prev, errorMessage]);
     },
-  }), [projectId, project?.name, project?.icon, handleNameChange]);
+  }), [projectId, project?.name, project?.icon, handleNameChange, handleIconChange]);
 
   // Use streaming hook
   const {
@@ -647,6 +689,9 @@ export default function DesignPage() {
   // Handle submit - uses streaming hook
   const handleSubmit = useCallback(async () => {
     if (!input.trim() || isStreaming || !hasApiKey) return;
+
+    // Clear completion indicator when sending new message
+    setJustCompleted(false);
 
     const currentImageUrl = pendingImageUrl;
     const userMessage: Message = {
@@ -813,6 +858,7 @@ export default function DesignPage() {
                 key={message.id}
                 message={message}
                 userImageUrl={user?.imageUrl}
+                onImageClick={setLightboxImage}
               />
             ))}
 
@@ -859,6 +905,7 @@ export default function DesignPage() {
             projectId={projectId}
             imageUrl={pendingImageUrl}
             onImageChange={setPendingImageUrl}
+            onImageClick={setLightboxImage}
           />
         </div>
 
@@ -895,6 +942,12 @@ export default function DesignPage() {
           />
         )}
       </div>
+
+      {/* Image Lightbox Modal */}
+      <ImageLightbox
+        src={lightboxImage}
+        onClose={() => setLightboxImage(null)}
+      />
     </div>
   );
 }
