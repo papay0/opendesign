@@ -103,8 +103,8 @@ export const metadata: Metadata = {
     canonical: "https://opendesign.build",
   },
   icons: {
-    icon: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
+    icon: "/icon.svg",
+    apple: "/apple-icon.svg",
   },
   manifest: "/manifest.json",
 };
@@ -138,7 +138,7 @@ const organizationJsonLd = {
   "@type": "Organization",
   name: "OpenDesign",
   url: "https://opendesign.build",
-  logo: "https://opendesign.build/logo.png",
+  logo: "https://opendesign.build/logo.svg",
   sameAs: ["https://github.com/papay0/opendesign"],
 };
 

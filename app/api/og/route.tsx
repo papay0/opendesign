@@ -40,36 +40,24 @@ export async function GET() {
               marginBottom: "40px",
             }}
           >
-            <div
-              style={{
-                width: "100px",
-                height: "100px",
-                borderRadius: "20px",
-                backgroundColor: "#1A1A1A",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
+            {/* Layers icon */}
+            <svg
+              width="56"
+              height="56"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#B8956F"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
-              {/* Layers icon */}
-              <svg
-                width="50"
-                height="50"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="white"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polygon points="12 2 2 7 12 12 22 7 12 2" />
-                <polyline points="2 17 12 22 22 17" />
-                <polyline points="2 12 12 17 22 12" />
-              </svg>
-            </div>
+              <polygon points="12 2 2 7 12 12 22 7 12 2" />
+              <polyline points="2 17 12 22 22 17" />
+              <polyline points="2 12 12 17 22 12" />
+            </svg>
             <span
               style={{
-                marginLeft: "28px",
+                marginLeft: "20px",
                 fontSize: "56px",
                 fontFamily: "Inter",
                 fontWeight: 500,
