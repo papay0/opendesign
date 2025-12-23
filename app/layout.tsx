@@ -8,6 +8,7 @@ import {
   SignedOut,
   UserButton,
 } from "@clerk/nextjs";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 /**
@@ -52,6 +53,7 @@ export default function RootLayout({
           className={`${playfair.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
         >
           {children}
+          <SpeedInsights />
         </body>
       </html>
     </ClerkProvider>
