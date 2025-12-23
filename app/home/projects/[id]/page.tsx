@@ -38,6 +38,7 @@ import { useDesignStreaming, type ParsedScreen } from "../../components/Streamin
 import { DesignCanvas } from "../../components/DesignCanvas";
 import { CodeView } from "../../components/CodeView";
 import { ProjectSkeleton } from "../../components/Skeleton";
+import { ImageUploadButton } from "../../components/ImageUploadButton";
 
 // ============================================================================
 // Types
@@ -47,6 +48,7 @@ interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
+  imageUrl?: string | null;
   timestamp: Date;
 }
 
@@ -115,6 +117,16 @@ function ChatMessage({
             : "bg-white border border-[#E8E4E0]"
         }`}
       >
+        {/* Attached image */}
+        {message.imageUrl && (
+          <div className="mb-2">
+            <img
+              src={message.imageUrl}
+              alt="Reference"
+              className="max-w-[180px] max-h-[180px] object-cover rounded-lg"
+            />
+          </div>
+        )}
         <p className="text-sm leading-relaxed whitespace-pre-wrap text-[#1A1A1A]">
           {message.content}
         </p>
@@ -133,12 +145,20 @@ function ChatInput({
   onSubmit,
   isLoading,
   disabled,
+  userId,
+  projectId,
+  imageUrl,
+  onImageChange,
 }: {
   value: string;
   onChange: (value: string) => void;
   onSubmit: () => void;
   isLoading: boolean;
   disabled: boolean;
+  userId: string;
+  projectId: string;
+  imageUrl: string | null;
+  onImageChange: (url: string | null) => void;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -160,33 +180,66 @@ function ChatInput({
   };
 
   return (
-    <div className="border-t border-[#E8E4E0] p-4 bg-white">
-      <div className="flex gap-3">
-        <textarea
-          ref={textareaRef}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={
-            disabled
-              ? "Configure your API key in Settings first..."
-              : "Describe your app design..."
-          }
-          disabled={disabled}
-          rows={1}
-          className="flex-1 bg-[#F5F2EF] border border-[#E8E4E0] rounded-xl px-4 py-3 text-[#1A1A1A] placeholder-[#9A9A9A] focus:outline-none focus:border-[#B8956F] focus:ring-2 focus:ring-[#B8956F]/10 transition-colors resize-none max-h-32 disabled:opacity-50 disabled:cursor-not-allowed"
-        />
-        <button
-          onClick={onSubmit}
-          disabled={disabled || isLoading || !value.trim()}
-          className="w-12 h-12 bg-[#B8956F] rounded-xl flex items-center justify-center hover:bg-[#A6845F] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-        >
-          {isLoading ? (
-            <Loader2 className="w-5 h-5 text-white animate-spin" />
-          ) : (
-            <Send className="w-5 h-5 text-white" />
-          )}
-        </button>
+    <div className="border-t border-[#E8E4E0] p-3 bg-white">
+      {/* Unified input container */}
+      <div className="bg-[#F5F2EF] rounded-2xl border border-[#E8E4E0] overflow-hidden transition-all focus-within:border-[#B8956F] focus-within:ring-2 focus-within:ring-[#B8956F]/10">
+        {/* Image preview - compact for chat */}
+        {imageUrl && (
+          <div className="px-3 pt-3 pb-1">
+            <div className="flex items-center gap-2.5 p-2 bg-white/60 rounded-lg border border-[#E8E4E0]/50">
+              <img
+                src={imageUrl}
+                alt="Reference"
+                className="w-10 h-10 object-cover rounded-md shadow-sm"
+              />
+              <span className="text-sm text-[#6B6B6B] flex-1">Reference image</span>
+              <button
+                onClick={() => onImageChange(null)}
+                className="text-xs text-[#9A9A9A] hover:text-red-500 px-1.5 py-1 rounded hover:bg-red-50 transition-colors"
+                type="button"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Input row */}
+        <div className="flex items-end gap-2 p-2">
+          <ImageUploadButton
+            userId={userId}
+            projectId={projectId}
+            onImageUploaded={onImageChange}
+            onImageRemoved={() => onImageChange(null)}
+            currentImageUrl={imageUrl}
+            disabled={disabled || isLoading}
+          />
+          <textarea
+            ref={textareaRef}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={
+              disabled
+                ? "Configure your API key in Settings first..."
+                : "Describe changes or add new screens..."
+            }
+            disabled={disabled}
+            rows={1}
+            className="flex-1 bg-transparent py-2.5 px-1 text-[#1A1A1A] placeholder-[#9A9A9A] focus:outline-none resize-none max-h-32 disabled:opacity-50 disabled:cursor-not-allowed"
+          />
+          <button
+            onClick={onSubmit}
+            disabled={disabled || isLoading || !value.trim()}
+            className="w-10 h-10 bg-[#B8956F] rounded-xl flex items-center justify-center hover:bg-[#A6845F] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 shadow-sm hover:shadow-md active:scale-95"
+          >
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 text-white animate-spin" />
+            ) : (
+              <Send className="w-4 h-4 text-white" />
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -224,6 +277,9 @@ function ApiKeyWarning() {
 // Main Design Page Component
 // ============================================================================
 
+const SIDEBAR_MIN_WIDTH = 320;
+const SIDEBAR_DEFAULT_WIDTH = 400;
+
 export default function DesignPage() {
   const params = useParams();
   const router = useRouter();
@@ -235,16 +291,56 @@ export default function DesignPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [savedScreens, setSavedScreens] = useState<ParsedScreen[]>([]);
   const [input, setInput] = useState("");
+  const [pendingImageUrl, setPendingImageUrl] = useState<string | null>(null);
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [hasApiKey, setHasApiKey] = useState(false);
   const [hasAutoGenerated, setHasAutoGenerated] = useState(false);
   const [justCompleted, setJustCompleted] = useState(false);
   const [editingScreenNames, setEditingScreenNames] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<ViewMode>("preview");
+  const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_DEFAULT_WIDTH);
+  const [isResizing, setIsResizing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const userMessageRef = useRef<Message | null>(null);
   const pendingProjectNameRef = useRef<string | null>(null);
   const pendingProjectIconRef = useRef<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Handle sidebar resize
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  }, []);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing || !containerRef.current) return;
+
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const maxWidth = containerRect.width * 0.5; // Max 50%
+      const newWidth = Math.min(Math.max(e.clientX - containerRect.left, SIDEBAR_MIN_WIDTH), maxWidth);
+      setSidebarWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    if (isResizing) {
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+      // Prevent text selection while resizing
+      document.body.style.userSelect = "none";
+      document.body.style.cursor = "col-resize";
+    }
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
+    };
+  }, [isResizing]);
 
   // Scroll to bottom of messages
   const scrollToBottom = useCallback(() => {
@@ -524,6 +620,7 @@ export default function DesignPage() {
             id: m.id,
             role: m.role as "user" | "assistant",
             content: m.content,
+            imageUrl: m.image_url,
             timestamp: new Date(m.created_at),
           }))
         );
@@ -535,6 +632,10 @@ export default function DesignPage() {
         (!messageHistory || messageHistory.length === 0)
       ) {
         setInput(projectData.app_idea);
+        // Also set the initial image if one was attached during creation
+        if (projectData.initial_image_url) {
+          setPendingImageUrl(projectData.initial_image_url);
+        }
       }
 
       setIsPageLoading(false);
@@ -547,10 +648,12 @@ export default function DesignPage() {
   const handleSubmit = useCallback(async () => {
     if (!input.trim() || isStreaming || !hasApiKey) return;
 
+    const currentImageUrl = pendingImageUrl;
     const userMessage: Message = {
       id: `user-${Date.now()}`,
       role: "user",
       content: input.trim(),
+      imageUrl: currentImageUrl,
       timestamp: new Date(),
     };
 
@@ -564,6 +667,7 @@ export default function DesignPage() {
       project_id: projectId,
       role: "user",
       content: userMessage.content,
+      image_url: currentImageUrl,
     });
 
     // Clear the ref since we saved immediately
@@ -571,6 +675,7 @@ export default function DesignPage() {
 
     const promptText = input.trim();
     setInput("");
+    setPendingImageUrl(null);
 
     // Get API config
     const apiConfig = getApiConfig();
@@ -587,7 +692,7 @@ export default function DesignPage() {
       return;
     }
 
-    // Start streaming with platform
+    // Start streaming with platform and image
     await startStreaming(
       "/api/ai/generate-design",
       {
@@ -597,15 +702,17 @@ export default function DesignPage() {
         conversationHistory: messages.map((m) => ({
           role: m.role,
           content: m.content,
+          imageUrl: m.imageUrl,
         })),
         platform: project?.platform || "mobile",
+        imageUrl: currentImageUrl,
       },
       {
         "x-api-key": apiConfig.key,
         "x-provider": apiConfig.provider,
       }
     );
-  }, [input, isStreaming, hasApiKey, startStreaming, projectId, savedScreens, messages, project?.platform]);
+  }, [input, isStreaming, hasApiKey, startStreaming, projectId, savedScreens, messages, project?.platform, pendingImageUrl]);
 
   // Store handleSubmit in ref for auto-generation
   submitRef.current = handleSubmit;
@@ -682,9 +789,12 @@ export default function DesignPage() {
       </div>
 
       {/* Main Content - Split View */}
-      <div className="flex-1 flex overflow-hidden">
+      <div ref={containerRef} className="flex-1 flex overflow-hidden">
         {/* Left Panel - Chat */}
-        <div className="w-1/3 min-w-[320px] max-w-[480px] flex flex-col border-r border-[#E8E4E0] bg-white">
+        <div
+          style={{ width: sidebarWidth }}
+          className="flex-shrink-0 flex flex-col border-r border-[#E8E4E0] bg-white"
+        >
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.length === 0 && !hasApiKey && <ApiKeyWarning />}
@@ -745,6 +855,25 @@ export default function DesignPage() {
             onSubmit={handleSubmit}
             isLoading={isStreaming}
             disabled={!hasApiKey}
+            userId={user?.id || ""}
+            projectId={projectId}
+            imageUrl={pendingImageUrl}
+            onImageChange={setPendingImageUrl}
+          />
+        </div>
+
+        {/* Resize Handle */}
+        <div
+          onMouseDown={handleMouseDown}
+          className={`w-1 cursor-col-resize bg-transparent hover:bg-[#B8956F]/30 transition-colors relative group ${
+            isResizing ? "bg-[#B8956F]/50" : ""
+          }`}
+        >
+          <div className="absolute inset-y-0 -left-1 -right-1" />
+          <div
+            className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-8 rounded-full transition-colors ${
+              isResizing ? "bg-[#B8956F]" : "bg-[#D4CFC9] group-hover:bg-[#B8956F]"
+            }`}
           />
         </div>
 
