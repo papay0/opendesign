@@ -33,7 +33,13 @@ import {
   Sparkles,
   Info,
   Trash2,
+  Crown,
+  CreditCard,
+  Calendar,
+  AlertCircle,
 } from "lucide-react";
+import { useSubscription } from "@/lib/hooks/useSubscription";
+import { PLANS, MESSAGE_PACK } from "@/lib/constants/plans";
 
 // ============================================================================
 // Types
@@ -239,6 +245,164 @@ function PrivacyNotice() {
 }
 
 // ============================================================================
+// Component: Subscription Section
+// ============================================================================
+
+function SubscriptionSection() {
+  const {
+    plan,
+    messagesRemaining,
+    messagesLimit,
+    messagesResetAt,
+    subscription,
+    isLoading,
+    upgradeToProUrl,
+    purchaseMessagesUrl,
+    manageSubscriptionUrl,
+  } = useSubscription();
+
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  const handleAction = async (action: "upgrade" | "purchase" | "manage") => {
+    setActionLoading(action);
+    let url: string | null = null;
+
+    switch (action) {
+      case "upgrade":
+        url = await upgradeToProUrl();
+        break;
+      case "purchase":
+        url = await purchaseMessagesUrl();
+        break;
+      case "manage":
+        url = await manageSubscriptionUrl();
+        break;
+    }
+
+    if (url) {
+      window.location.href = url;
+    }
+    setActionLoading(null);
+  };
+
+  const planConfig = PLANS[plan];
+  const resetDate = messagesResetAt ? new Date(messagesResetAt) : null;
+  const daysUntilReset = resetDate
+    ? Math.max(0, Math.ceil((new Date(resetDate.getTime() + 30 * 24 * 60 * 60 * 1000).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : 0;
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <h2 className="font-serif text-xl text-[#1A1A1A]">Subscription</h2>
+        <div className="h-32 bg-[#F5F2EF] rounded-xl animate-pulse" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <h2 className="font-serif text-xl text-[#1A1A1A]">Subscription</h2>
+
+      {/* Current Plan Card */}
+      <div className="rounded-xl border border-[#E8E4E0] overflow-hidden">
+        <div className={`p-4 ${plan === "pro" ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white" : "bg-[#F5F2EF]"}`}>
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg ${plan === "pro" ? "bg-white/20" : "bg-[#E8E4DF]"}`}>
+              {plan === "pro" ? <Crown className="w-5 h-5" /> : <Zap className="w-5 h-5 text-[#6B6459]" />}
+            </div>
+            <div>
+              <h3 className="font-medium">{planConfig.name} Plan</h3>
+              <p className={`text-sm ${plan === "pro" ? "text-white/80" : "text-[#6B6459]"}`}>
+                {plan === "pro" ? `$${planConfig.price}/month` : "Free forever"}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-4 bg-white space-y-4">
+          {/* Usage Stats */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium text-[#1A1A1A]">Messages</p>
+              <p className="text-sm text-[#6B6459]">Resets in {daysUntilReset} days</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xl font-bold text-[#1A1A1A]">{messagesRemaining}/{messagesLimit}</p>
+              <p className="text-sm text-[#6B6459]">{messagesRemaining} remaining</p>
+            </div>
+          </div>
+
+          {/* Progress Bar */}
+          <div className="h-2 bg-[#E8E4DF] rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all ${messagesRemaining <= 0 ? "bg-red-500" : messagesRemaining <= messagesLimit * 0.2 ? "bg-amber-500" : "bg-[#B8956F]"}`}
+              style={{ width: `${((messagesLimit - messagesRemaining) / messagesLimit) * 100}%` }}
+            />
+          </div>
+
+          {/* Low messages warning */}
+          {messagesRemaining <= messagesLimit * 0.2 && messagesRemaining > 0 && (
+            <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <AlertCircle className="w-4 h-4 text-amber-600" />
+              <p className="text-sm text-amber-700">Running low on messages.</p>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-2">
+            {plan === "free" ? (
+              <button
+                onClick={() => handleAction("upgrade")}
+                disabled={actionLoading !== null}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg font-medium hover:from-amber-600 hover:to-orange-600 transition-colors disabled:opacity-50"
+              >
+                <Crown className="w-4 h-4" />
+                {actionLoading === "upgrade" ? "Loading..." : `Upgrade to Pro - $${PLANS.pro.price}/mo`}
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={() => handleAction("purchase")}
+                  disabled={actionLoading !== null}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-[#E8E4DF] text-[#3D3A35] rounded-lg font-medium hover:bg-[#F5F2EF] transition-colors disabled:opacity-50"
+                >
+                  <Zap className="w-4 h-4" />
+                  {actionLoading === "purchase" ? "..." : `+${MESSAGE_PACK.messages} msgs - $${MESSAGE_PACK.priceUsd}`}
+                </button>
+                {subscription && (
+                  <button
+                    onClick={() => handleAction("manage")}
+                    disabled={actionLoading !== null}
+                    className="px-4 py-2.5 border border-[#E8E4DF] text-[#6B6459] rounded-lg hover:bg-[#F5F2EF] transition-colors disabled:opacity-50"
+                    title="Manage subscription"
+                  >
+                    <CreditCard className="w-4 h-4" />
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Subscription Status */}
+          {subscription && (
+            <div className="flex items-center gap-2 pt-2 text-sm text-[#6B6459]">
+              <Calendar className="w-4 h-4" />
+              <span>
+                {subscription.cancel_at_period_end ? "Ends" : "Renews"}:{" "}
+                {subscription.current_period_end
+                  ? new Date(subscription.current_period_end).toLocaleDateString()
+                  : "N/A"}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
 // Component: Billing Mode Selector (Future)
 // ============================================================================
 
@@ -344,6 +508,9 @@ export default function SettingsPage() {
             Configure your API key and preferences
           </p>
         </div>
+
+        {/* Subscription Section */}
+        <SubscriptionSection />
 
         {/* Billing Mode Selector */}
         <BillingModeSelector />

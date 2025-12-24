@@ -36,6 +36,8 @@ import { createClient } from "@/lib/supabase/client";
 import { useUserSync } from "@/lib/hooks/useUserSync";
 import { formatCost, formatTokens } from "@/lib/constants/pricing";
 import type { UsageLog } from "@/lib/supabase/types";
+import { CostEstimator } from "./components/CostEstimator";
+import { ScenarioPlanning } from "./components/ScenarioPlanning";
 
 // ============================================================================
 // Types
@@ -882,7 +884,7 @@ export default function AdminDashboard() {
         variants={itemVariants}
         initial="hidden"
         animate="visible"
-        className="bg-white rounded-2xl border border-[#E8E4E0] p-6"
+        className="bg-white rounded-2xl border border-[#E8E4E0] p-6 mb-8"
         style={{ boxShadow: "0 2px 12px -2px rgba(0,0,0,0.06)" }}
       >
         <div className="flex items-center justify-between mb-6">
@@ -919,6 +921,40 @@ export default function AdminDashboard() {
           ))}
         </div>
       </motion.div>
+
+      {/* Business Analytics Section */}
+      <div className="space-y-8">
+        <h2 className="text-xl font-semibold text-[#1A1A1A] flex items-center gap-2">
+          <TrendingUp className="w-5 h-5 text-[#B8956F]" />
+          Business Analytics
+        </h2>
+
+        {/* Cost Estimator */}
+        <CostEstimator
+          actualAvgCostFlash={
+            metrics.modelStats.find((m) => m.model.includes("flash"))?.avgCostPerGen ||
+            0.026
+          }
+          actualAvgCostPro={
+            metrics.modelStats.find((m) => m.model.includes("pro"))?.avgCostPerGen ||
+            0.135
+          }
+        />
+
+        {/* Scenario Planning */}
+        <ScenarioPlanning
+          currentUsers={uniqueUsers}
+          currentProUsers={Math.round(uniqueUsers * 0.1)} // Estimate 10% Pro
+          avgCostFlash={
+            metrics.modelStats.find((m) => m.model.includes("flash"))?.avgCostPerGen ||
+            0.026
+          }
+          avgCostPro={
+            metrics.modelStats.find((m) => m.model.includes("pro"))?.avgCostPerGen ||
+            0.135
+          }
+        />
+      </div>
     </div>
   );
 }

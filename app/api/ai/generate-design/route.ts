@@ -24,15 +24,71 @@ import { streamText } from "ai";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { SYSTEM_PROMPTS, type Platform } from "@/lib/prompts/system-prompts";
+import { auth } from "@clerk/nextjs/server";
+import { createClient } from "@supabase/supabase-js";
+import { isModelAllowedForPlan, type PlanType } from "@/lib/constants/plans";
+
+// Lazy initialization to avoid build-time errors
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 // ============================================================================
 // Route Handler
 // ============================================================================
 
 export async function POST(request: Request): Promise<Response> {
+  const supabaseAdmin = getSupabaseAdmin();
   console.log("[Design Stream] POST request received");
 
   try {
+    // ========================================================================
+    // Authentication & Usage Quota Check
+    // ========================================================================
+    const { userId: clerkUserId } = await auth();
+
+    if (!clerkUserId) {
+      return new Response(
+        JSON.stringify({ error: "Authentication required. Please sign in." }),
+        { status: 401, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // Get user from database to check quota
+    const { data: dbUser, error: userError } = await supabaseAdmin
+      .from("users")
+      .select("id, plan, messages_remaining")
+      .eq("clerk_id", clerkUserId)
+      .single();
+
+    if (userError || !dbUser) {
+      console.error("[Design Stream] User lookup failed:", userError);
+      return new Response(
+        JSON.stringify({ error: "User not found. Please try signing out and back in." }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // Check if user has messages remaining
+    if (dbUser.messages_remaining <= 0) {
+      const upgradeMessage = dbUser.plan === "free"
+        ? "You've used all your free messages this month. Upgrade to Pro for 50 messages/month!"
+        : "You've used all your messages this month. Purchase more messages to continue.";
+
+      return new Response(
+        JSON.stringify({
+          error: upgradeMessage,
+          code: "QUOTA_EXCEEDED",
+          plan: dbUser.plan,
+          messagesRemaining: 0,
+        }),
+        { status: 429, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     // Get user's API key from headers (BYOK)
     const apiKey = request.headers.get("x-api-key");
     const provider = request.headers.get("x-provider") as "openrouter" | "gemini";
@@ -46,6 +102,24 @@ export async function POST(request: Request): Promise<Response> {
 
     // Parse request body
     const { prompt, existingScreens, conversationHistory, platform, imageUrl, model: requestedModel } = await request.json();
+
+    // ========================================================================
+    // Model Access Check (Free users can only use Flash)
+    // ========================================================================
+    const userPlan = (dbUser.plan || "free") as PlanType;
+    const modelToUse = requestedModel || "gemini-3-pro-preview";
+
+    if (!isModelAllowedForPlan(modelToUse, userPlan) && !isModelAllowedForPlan(`google/${modelToUse}`, userPlan)) {
+      return new Response(
+        JSON.stringify({
+          error: "This model is only available for Pro users. Please upgrade or use the Flash model.",
+          code: "MODEL_RESTRICTED",
+          plan: userPlan,
+          requestedModel: modelToUse,
+        }),
+        { status: 403, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
     if (!prompt) {
       return new Response(
@@ -213,8 +287,31 @@ IMPORTANT:
             console.error("[Design Stream] Failed to get usage:", usageError);
           }
 
-          // Send completion signal
-          const doneData = `data: ${JSON.stringify({ done: true })}\n\n`;
+          // ================================================================
+          // Decrement user's message quota after successful generation
+          // ================================================================
+          try {
+            const { error: decrementError } = await supabaseAdmin
+              .from("users")
+              .update({
+                messages_remaining: dbUser.messages_remaining - 1,
+              })
+              .eq("id", dbUser.id);
+
+            if (decrementError) {
+              console.error("[Design Stream] Failed to decrement messages:", decrementError);
+            } else {
+              console.log(`[Design Stream] Decremented messages for user ${dbUser.id}. Remaining: ${dbUser.messages_remaining - 1}`);
+            }
+          } catch (decrementErr) {
+            console.error("[Design Stream] Error decrementing messages:", decrementErr);
+          }
+
+          // Send updated quota info with completion signal
+          const doneData = `data: ${JSON.stringify({
+            done: true,
+            messagesRemaining: Math.max(0, dbUser.messages_remaining - 1),
+          })}\n\n`;
           controller.enqueue(encoder.encode(doneData));
 
           console.log(`[Design Stream] Completed with ${chunkCount} chunks`);

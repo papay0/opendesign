@@ -4,12 +4,13 @@
  * Model Selector Component
  *
  * A compact dropdown for selecting AI models.
- * Admin-only feature for choosing between Gemini 3 Pro and Flash.
+ * Shows Pro model as locked for free users.
  */
 
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown, Check, Cpu, Zap } from "lucide-react";
+import { ChevronDown, Check, Cpu, Zap, Lock, Crown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { type PlanType, isModelAllowedForPlan } from "@/lib/constants/plans";
 
 // ============================================================================
 // Types and Constants
@@ -62,9 +63,17 @@ interface ModelSelectorProps {
   value: ModelId;
   onChange: (model: ModelId) => void;
   compact?: boolean;
+  userPlan?: PlanType;
+  onUpgradeClick?: () => void;
 }
 
-export function ModelSelector({ value, onChange, compact = false }: ModelSelectorProps) {
+export function ModelSelector({
+  value,
+  onChange,
+  compact = false,
+  userPlan = "free",
+  onUpgradeClick,
+}: ModelSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -86,6 +95,16 @@ export function ModelSelector({ value, onChange, compact = false }: ModelSelecto
   }, [isOpen]);
 
   const handleSelect = (modelId: ModelId) => {
+    // Check if user can use this model
+    if (!isModelAllowedForPlan(modelId, userPlan)) {
+      // Trigger upgrade modal instead
+      if (onUpgradeClick) {
+        onUpgradeClick();
+      }
+      setIsOpen(false);
+      return;
+    }
+
     onChange(modelId);
     setSelectedModel(modelId);
     setIsOpen(false);
@@ -123,6 +142,7 @@ export function ModelSelector({ value, onChange, compact = false }: ModelSelecto
               {AVAILABLE_MODELS.map((model) => {
                 const ModelIcon = model.icon;
                 const isSelected = value === model.id;
+                const isAllowed = isModelAllowedForPlan(model.id, userPlan);
 
                 return (
                   <button
@@ -131,23 +151,43 @@ export function ModelSelector({ value, onChange, compact = false }: ModelSelecto
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
                       isSelected
                         ? "bg-[#F5F2EF]"
-                        : "hover:bg-[#FAF8F5]"
+                        : isAllowed
+                        ? "hover:bg-[#FAF8F5]"
+                        : "hover:bg-amber-50 cursor-pointer"
                     }`}
                   >
                     <div
                       className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                         isSelected
                           ? "bg-[#B8956F] text-white"
-                          : "bg-[#F5F2EF] text-[#6B6B6B]"
+                          : isAllowed
+                          ? "bg-[#F5F2EF] text-[#6B6B6B]"
+                          : "bg-amber-100 text-amber-600"
                       }`}
                     >
-                      <ModelIcon className="w-4 h-4" />
+                      {isAllowed ? (
+                        <ModelIcon className="w-4 h-4" />
+                      ) : (
+                        <Lock className="w-4 h-4" />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[#1A1A1A]">{model.name}</p>
-                      <p className="text-xs text-[#9A9A9A]">{model.description}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className={`text-sm font-medium ${isAllowed ? "text-[#1A1A1A]" : "text-[#6B6B6B]"}`}>
+                          {model.name}
+                        </p>
+                        {!isAllowed && (
+                          <span className="inline-flex items-center gap-0.5 text-[10px] bg-gradient-to-r from-amber-500 to-orange-500 text-white px-1.5 py-0.5 rounded-full">
+                            <Crown className="w-2.5 h-2.5" />
+                            Pro
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-[#9A9A9A]">
+                        {isAllowed ? model.description : "Upgrade to unlock"}
+                      </p>
                     </div>
-                    {isSelected && (
+                    {isSelected && isAllowed && (
                       <Check className="w-4 h-4 text-[#B8956F] flex-shrink-0" />
                     )}
                   </button>

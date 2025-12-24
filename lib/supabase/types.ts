@@ -224,6 +224,10 @@ export interface Database {
           name: string                  // Combined firstName + lastName
           avatar_url: string | null     // Profile image URL from Clerk
           role: 'regular' | 'admin'     // User role
+          plan: 'free' | 'pro'          // Subscription plan
+          stripe_customer_id: string | null  // Stripe customer ID
+          messages_remaining: number    // Messages left this period
+          messages_reset_at: string     // When messages reset
           created_at: string            // First sign-in timestamp
           updated_at: string            // Last profile update
           last_sign_in_at: string       // Last sign-in timestamp
@@ -236,6 +240,10 @@ export interface Database {
           name: string
           avatar_url?: string | null
           role?: 'regular' | 'admin'
+          plan?: 'free' | 'pro'
+          stripe_customer_id?: string | null
+          messages_remaining?: number
+          messages_reset_at?: string
           created_at?: string
           updated_at?: string
           last_sign_in_at?: string
@@ -248,12 +256,106 @@ export interface Database {
           name?: string
           avatar_url?: string | null
           role?: 'regular' | 'admin'
+          plan?: 'free' | 'pro'
+          stripe_customer_id?: string | null
+          messages_remaining?: number
+          messages_reset_at?: string
           created_at?: string
           updated_at?: string
           last_sign_in_at?: string
           sign_in_count?: number
         }
         Relationships: []
+      }
+
+      /**
+       * Subscriptions table - tracks active subscription details
+       */
+      subscriptions: {
+        Row: {
+          id: string
+          user_id: string
+          stripe_subscription_id: string | null
+          stripe_price_id: string | null
+          status: 'active' | 'canceled' | 'past_due' | 'trialing' | 'incomplete'
+          current_period_start: string | null
+          current_period_end: string | null
+          cancel_at_period_end: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          stripe_subscription_id?: string | null
+          stripe_price_id?: string | null
+          status?: 'active' | 'canceled' | 'past_due' | 'trialing' | 'incomplete'
+          current_period_start?: string | null
+          current_period_end?: string | null
+          cancel_at_period_end?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          stripe_subscription_id?: string | null
+          stripe_price_id?: string | null
+          status?: 'active' | 'canceled' | 'past_due' | 'trialing' | 'incomplete'
+          current_period_start?: string | null
+          current_period_end?: string | null
+          cancel_at_period_end?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+
+      /**
+       * Message purchases table - tracks one-time message pack purchases
+       */
+      message_purchases: {
+        Row: {
+          id: string
+          user_id: string
+          stripe_payment_intent_id: string | null
+          messages_purchased: number
+          amount_cents: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          stripe_payment_intent_id?: string | null
+          messages_purchased: number
+          amount_cents: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          stripe_payment_intent_id?: string | null
+          messages_purchased?: number
+          amount_cents?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_purchases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
       }
     }
     Views: {
@@ -309,3 +411,17 @@ export type UsageLog = Database['public']['Tables']['usage_logs']['Row']
 export type UsageLogInsert = Database['public']['Tables']['usage_logs']['Insert']
 /** Usage log update type */
 export type UsageLogUpdate = Database['public']['Tables']['usage_logs']['Update']
+
+/** Subscription row type */
+export type Subscription = Database['public']['Tables']['subscriptions']['Row']
+/** Subscription insert type */
+export type SubscriptionInsert = Database['public']['Tables']['subscriptions']['Insert']
+/** Subscription update type */
+export type SubscriptionUpdate = Database['public']['Tables']['subscriptions']['Update']
+
+/** Message purchase row type */
+export type MessagePurchase = Database['public']['Tables']['message_purchases']['Row']
+/** Message purchase insert type */
+export type MessagePurchaseInsert = Database['public']['Tables']['message_purchases']['Insert']
+/** Message purchase update type */
+export type MessagePurchaseUpdate = Database['public']['Tables']['message_purchases']['Update']
