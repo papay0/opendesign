@@ -41,6 +41,8 @@ import type { UsageLog } from "@/lib/supabase/types";
 // Types
 // ============================================================================
 
+type ModelFilter = "all" | "pro" | "flash";
+
 interface DailyStats {
   date: string;
   cost: number;
@@ -67,6 +69,14 @@ function getModelDisplayName(model: string): string {
   if (model.includes("flash")) return "Gemini 3 Flash";
   if (model.includes("pro")) return "Gemini 3 Pro";
   return model;
+}
+
+// Helper to check if a log matches the filter
+function matchesModelFilter(log: UsageLog, filter: ModelFilter): boolean {
+  if (filter === "all") return true;
+  if (filter === "pro") return log.model?.includes("pro") ?? true;
+  if (filter === "flash") return log.model?.includes("flash") ?? false;
+  return true;
 }
 
 // ============================================================================
@@ -101,6 +111,42 @@ const numberVariants = {
     transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const },
   },
 };
+
+// ============================================================================
+// Model Filter Control
+// ============================================================================
+
+function ModelFilterControl({
+  value,
+  onChange,
+}: {
+  value: ModelFilter;
+  onChange: (filter: ModelFilter) => void;
+}) {
+  const options: { value: ModelFilter; label: string }[] = [
+    { value: "all", label: "All Models" },
+    { value: "pro", label: "Pro" },
+    { value: "flash", label: "Flash" },
+  ];
+
+  return (
+    <div className="flex bg-[#F5F2EF] rounded-xl p-1 border border-[#E8E4E0]">
+      {options.map((option) => (
+        <button
+          key={option.value}
+          onClick={() => onChange(option.value)}
+          className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+            value === option.value
+              ? "bg-white text-[#1A1A1A] shadow-sm"
+              : "text-[#6B6B6B] hover:text-[#1A1A1A]"
+          }`}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 // ============================================================================
 // Metric Card Component
@@ -291,6 +337,7 @@ export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [uniqueUsers, setUniqueUsers] = useState(0);
   const [uniqueProjects, setUniqueProjects] = useState(0);
+  const [modelFilter, setModelFilter] = useState<ModelFilter>("all");
 
   // Check admin access
   useEffect(() => {
@@ -335,7 +382,10 @@ export default function AdminDashboard() {
 
   // Calculate metrics
   const metrics = useMemo(() => {
-    if (usageLogs.length === 0) {
+    // Filter logs by selected model
+    const filteredLogs = usageLogs.filter((log) => matchesModelFilter(log, modelFilter));
+
+    if (filteredLogs.length === 0) {
       return {
         totalCost: 0,
         totalGenerations: 0,
@@ -352,26 +402,26 @@ export default function AdminDashboard() {
       };
     }
 
-    // Basic totals
-    const totalCost = usageLogs.reduce((sum, log) => sum + log.total_cost, 0);
-    const totalGenerations = usageLogs.length;
-    const totalInputTokens = usageLogs.reduce(
+    // Basic totals (using filtered logs)
+    const totalCost = filteredLogs.reduce((sum, log) => sum + log.total_cost, 0);
+    const totalGenerations = filteredLogs.length;
+    const totalInputTokens = filteredLogs.reduce(
       (sum, log) => sum + log.input_tokens,
       0
     );
-    const totalOutputTokens = usageLogs.reduce(
+    const totalOutputTokens = filteredLogs.reduce(
       (sum, log) => sum + log.output_tokens,
       0
     );
-    const totalCachedTokens = usageLogs.reduce(
+    const totalCachedTokens = filteredLogs.reduce(
       (sum, log) => sum + (log.cached_tokens || 0),
       0
     );
     const avgCostPerGeneration = totalCost / totalGenerations;
 
-    // Group by project to identify first vs follow-up
+    // Group by project to identify first vs follow-up (using filtered logs)
     const projectGenerations: Record<string, UsageLog[]> = {};
-    for (const log of usageLogs) {
+    for (const log of filteredLogs) {
       if (!projectGenerations[log.project_id]) {
         projectGenerations[log.project_id] = [];
       }
@@ -408,7 +458,7 @@ export default function AdminDashboard() {
     const avgFirstGenCost = firstGenCount > 0 ? firstGenTotal / firstGenCount : 0;
     const avgFollowUpCost = followUpCount > 0 ? followUpTotal / followUpCount : 0;
 
-    // Daily stats (last 7 days)
+    // Daily stats (last 7 days) - using filtered logs
     const dailyMap: Record<string, { cost: number; generations: number }> = {};
     const today = new Date();
 
@@ -420,8 +470,8 @@ export default function AdminDashboard() {
       dailyMap[dateStr] = { cost: 0, generations: 0 };
     }
 
-    // Populate with actual data
-    for (const log of usageLogs) {
+    // Populate with actual data (filtered)
+    for (const log of filteredLogs) {
       const dateStr = new Date(log.created_at).toISOString().split("T")[0];
       if (dailyMap[dateStr]) {
         dailyMap[dateStr].cost += log.total_cost;
@@ -437,7 +487,7 @@ export default function AdminDashboard() {
       })
     );
 
-    // Model breakdown
+    // Model breakdown (always uses all logs to show breakdown, not filtered)
     const modelMap: Record<string, {
       cost: number;
       generations: number;
@@ -482,7 +532,7 @@ export default function AdminDashboard() {
       dailyStats,
       modelStats,
     };
-  }, [usageLogs]);
+  }, [usageLogs, modelFilter]);
 
   // Loading state
   if (isUserLoading || isLoading) {
@@ -547,11 +597,14 @@ export default function AdminDashboard() {
               AI generation costs and usage insights
             </p>
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-[#B8956F]/10 rounded-full">
-            <div className="w-2 h-2 rounded-full bg-[#B8956F] animate-pulse" />
-            <span className="text-xs font-medium text-[#B8956F]">
-              Admin Access
-            </span>
+          <div className="flex items-center gap-4">
+            <ModelFilterControl value={modelFilter} onChange={setModelFilter} />
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-[#B8956F]/10 rounded-full">
+              <div className="w-2 h-2 rounded-full bg-[#B8956F] animate-pulse" />
+              <span className="text-xs font-medium text-[#B8956F]">
+                Admin Access
+              </span>
+            </div>
           </div>
         </div>
       </motion.div>
@@ -738,8 +791,8 @@ export default function AdminDashboard() {
         </motion.div>
       </motion.div>
 
-      {/* Model Breakdown */}
-      {metrics.modelStats.length > 0 && (
+      {/* Model Breakdown - only show when viewing all models */}
+      {modelFilter === "all" && metrics.modelStats.length > 0 && (
         <motion.div
           variants={itemVariants}
           initial="hidden"
