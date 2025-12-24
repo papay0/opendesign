@@ -8,9 +8,10 @@ import { toFileName } from "./CodeFileSidebar";
 interface CodeViewToolbarProps {
   screens: ParsedScreen[];
   projectName: string;
+  isMobileView?: boolean;
 }
 
-export function CodeViewToolbar({ screens, projectName }: CodeViewToolbarProps) {
+export function CodeViewToolbar({ screens, projectName, isMobileView = false }: CodeViewToolbarProps) {
   const [copiedAll, setCopiedAll] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
@@ -53,6 +54,38 @@ export function CodeViewToolbar({ screens, projectName }: CodeViewToolbarProps) 
     }
   };
 
+  // Mobile layout - inline buttons (no container, rendered inside CodeView toolbar row)
+  if (isMobileView) {
+    return (
+      <>
+        <button
+          onClick={handleCopyAll}
+          disabled={screens.length === 0}
+          className="flex items-center gap-1 px-2.5 py-2 text-sm text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-[#F5F2EF] rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-[#E8E4E0] flex-shrink-0"
+        >
+          {copiedAll ? (
+            <Check className="w-4 h-4 text-green-600" />
+          ) : (
+            <Copy className="w-4 h-4" />
+          )}
+        </button>
+
+        <button
+          onClick={handleDownloadZip}
+          disabled={screens.length === 0 || downloading}
+          className="flex items-center gap-1 px-2.5 py-2 text-sm bg-[#B8956F] text-white hover:bg-[#A6845F] rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+        >
+          {downloading ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Download className="w-4 h-4" />
+          )}
+        </button>
+      </>
+    );
+  }
+
+  // Desktop layout
   return (
     <div className="h-12 bg-white border-b border-[#E8E4E0] flex items-center justify-between px-4 flex-shrink-0">
       <div className="flex items-center gap-2">

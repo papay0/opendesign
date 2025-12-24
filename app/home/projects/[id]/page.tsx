@@ -36,9 +36,9 @@ import {
   Layers,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import type { Project } from "@/lib/supabase/types";
+import type { Project, UsageLog } from "@/lib/supabase/types";
 import { EditableProjectHeader } from "../../components/EditableProjectHeader";
-import { useDesignStreaming, type ParsedScreen } from "../../components/StreamingScreenPreview";
+import { useDesignStreaming, type ParsedScreen, type UsageData } from "../../components/StreamingScreenPreview";
 import { DesignCanvas } from "../../components/DesignCanvas";
 import { CodeView } from "../../components/CodeView";
 import { ProjectSkeleton } from "../../components/Skeleton";
@@ -50,6 +50,9 @@ import {
   validateImage,
   uploadImage,
 } from "@/lib/upload/image-upload";
+import { CostIndicator } from "../../components/CostIndicator";
+import { calculateCost } from "@/lib/constants/pricing";
+import { useUserSync } from "@/lib/hooks/useUserSync";
 
 // ============================================================================
 // Types
@@ -64,7 +67,7 @@ interface Message {
 }
 
 type ViewMode = "preview" | "code";
-type MobileTab = "chat" | "canvas";
+type MobileTab = "chat" | "canvas" | "code";
 
 // ============================================================================
 // Constants
@@ -373,6 +376,10 @@ export default function DesignPage() {
   // Mobile detection
   const isMobile = useIsMobile();
 
+  // User sync for admin role check
+  const { dbUser } = useUserSync();
+  const isAdmin = dbUser?.role === "admin";
+
   // State
   const [project, setProject] = useState<Project | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -389,6 +396,8 @@ export default function DesignPage() {
   const [isResizing, setIsResizing] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [mobileActiveTab, setMobileActiveTab] = useState<MobileTab>("chat");
+  const [usageLogs, setUsageLogs] = useState<UsageLog[]>([]);
+  const [totalSessionCost, setTotalSessionCost] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const userMessageRef = useRef<Message | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -841,37 +850,33 @@ export default function DesignPage() {
           />
         )}
 
-        {/* Preview/Code Toggle */}
-        <div className={`flex bg-[#F5F2EF] rounded-lg p-1 border border-[#E8E4E0] ml-auto flex-shrink-0 ${
-          isMobile ? "text-xs" : ""
-        }`}>
-          <button
-            onClick={() => setViewMode("preview")}
-            className={`flex items-center gap-1 px-2 py-1.5 text-sm font-medium rounded-md transition-colors ${
-              isMobile ? "px-2 text-xs" : "gap-1.5 px-3"
-            } ${
-              viewMode === "preview"
-                ? "bg-white text-[#1A1A1A] shadow-sm"
-                : "text-[#6B6B6B] hover:text-[#1A1A1A]"
-            }`}
-          >
-            <Eye className={isMobile ? "w-3.5 h-3.5" : "w-4 h-4"} />
-            {!isMobile && "Preview"}
-          </button>
-          <button
-            onClick={() => setViewMode("code")}
-            className={`flex items-center gap-1 px-2 py-1.5 text-sm font-medium rounded-md transition-colors ${
-              isMobile ? "px-2 text-xs" : "gap-1.5 px-3"
-            } ${
-              viewMode === "code"
-                ? "bg-white text-[#1A1A1A] shadow-sm"
-                : "text-[#6B6B6B] hover:text-[#1A1A1A]"
-            }`}
-          >
-            <Code2 className={isMobile ? "w-3.5 h-3.5" : "w-4 h-4"} />
-            {!isMobile && "Code"}
-          </button>
-        </div>
+        {/* Preview/Code Toggle - Desktop only */}
+        {!isMobile && (
+          <div className="flex bg-[#F5F2EF] rounded-lg p-1 border border-[#E8E4E0] ml-auto flex-shrink-0">
+            <button
+              onClick={() => setViewMode("preview")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                viewMode === "preview"
+                  ? "bg-white text-[#1A1A1A] shadow-sm"
+                  : "text-[#6B6B6B] hover:text-[#1A1A1A]"
+              }`}
+            >
+              <Eye className="w-4 h-4" />
+              Preview
+            </button>
+            <button
+              onClick={() => setViewMode("code")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                viewMode === "code"
+                  ? "bg-white text-[#1A1A1A] shadow-sm"
+                  : "text-[#6B6B6B] hover:text-[#1A1A1A]"
+              }`}
+            >
+              <Code2 className="w-4 h-4" />
+              Code
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Mobile Tab Switcher */}
@@ -881,6 +886,7 @@ export default function DesignPage() {
             options={[
               { value: "chat" as MobileTab, label: "Chat", icon: <MessageSquare className="w-4 h-4" /> },
               { value: "canvas" as MobileTab, label: "Canvas", icon: <Layers className="w-4 h-4" /> },
+              { value: "code" as MobileTab, label: "Code", icon: <Code2 className="w-4 h-4" /> },
             ]}
             value={mobileActiveTab}
             onChange={setMobileActiveTab}
@@ -1077,23 +1083,25 @@ export default function DesignPage() {
 
         {/* Mobile: Canvas Tab */}
         {isMobile && mobileActiveTab === "canvas" && (
-          viewMode === "preview" ? (
-            <DesignCanvas
-              completedScreens={displayScreens}
-              currentStreamingHtml={currentStreamingHtml}
-              currentScreenName={currentScreenName}
-              isStreaming={isStreaming}
-              editingScreenNames={editingScreenNames}
-              isEditingExistingScreen={isEditingExistingScreen}
-              platform={project?.platform || "mobile"}
-              isMobileView={true}
-            />
-          ) : (
-            <CodeView
-              screens={displayScreens}
-              projectName={project?.name || "Untitled"}
-            />
-          )
+          <DesignCanvas
+            completedScreens={displayScreens}
+            currentStreamingHtml={currentStreamingHtml}
+            currentScreenName={currentScreenName}
+            isStreaming={isStreaming}
+            editingScreenNames={editingScreenNames}
+            isEditingExistingScreen={isEditingExistingScreen}
+            platform={project?.platform || "mobile"}
+            isMobileView={true}
+          />
+        )}
+
+        {/* Mobile: Code Tab */}
+        {isMobile && mobileActiveTab === "code" && (
+          <CodeView
+            screens={displayScreens}
+            projectName={project?.name || "Untitled"}
+            isMobileView={true}
+          />
         )}
       </div>
 

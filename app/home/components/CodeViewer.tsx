@@ -3,12 +3,41 @@
 import { useState } from "react";
 import { Copy, Check, Download } from "lucide-react";
 import Editor, { BeforeMount } from "@monaco-editor/react";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import type { ParsedScreen } from "./StreamingScreenPreview";
 import { toFileName } from "./CodeFileSidebar";
+
+// Custom warm theme for mobile syntax highlighter (matches Monaco theme)
+const mobileCodeTheme: { [key: string]: React.CSSProperties } = {
+  'code[class*="language-"]': {
+    color: "#1A1A1A",
+    background: "#FAF8F5",
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+    fontSize: "12px",
+    lineHeight: "1.6",
+  },
+  'pre[class*="language-"]': {
+    color: "#1A1A1A",
+    background: "#FAF8F5",
+    padding: "16px",
+    margin: 0,
+    overflow: "auto",
+  },
+  comment: { color: "#9A9A9A", fontStyle: "italic" },
+  tag: { color: "#C4784F" },
+  "attr-name": { color: "#B8956F" },
+  "attr-value": { color: "#6B8E6B" },
+  string: { color: "#6B8E6B" },
+  keyword: { color: "#B8956F" },
+  number: { color: "#B8956F" },
+  punctuation: { color: "#6B6B6B" },
+  operator: { color: "#6B6B6B" },
+};
 
 interface CodeViewerProps {
   screen: ParsedScreen | undefined;
   fileName: string | null;
+  isMobileView?: boolean;
 }
 
 // Define custom warm theme for Monaco
@@ -50,7 +79,7 @@ const handleEditorWillMount: BeforeMount = (monaco) => {
   });
 };
 
-export function CodeViewer({ screen, fileName }: CodeViewerProps) {
+export function CodeViewer({ screen, fileName, isMobileView = false }: CodeViewerProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -80,58 +109,77 @@ export function CodeViewer({ screen, fileName }: CodeViewerProps) {
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-[#FAF8F5] overflow-hidden">
-      {/* Tab bar */}
-      <div className="h-10 bg-white border-b border-[#E8E4E0] flex items-center px-3 flex-shrink-0">
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-[#FAF8F5] border-b-2 border-b-[#B8956F] text-sm text-[#1A1A1A] font-medium rounded-t-lg">
-          <span>{toFileName(screen.name)}</span>
+    <div className="flex-1 flex flex-col bg-[#FAF8F5] overflow-hidden min-h-0">
+      {/* Tab bar - hidden on mobile since CodeView shows file selector */}
+      {!isMobileView && (
+        <div className="h-10 bg-white border-b border-[#E8E4E0] flex items-center px-3 flex-shrink-0">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-[#FAF8F5] border-b-2 border-b-[#B8956F] text-sm text-[#1A1A1A] font-medium rounded-t-lg">
+            <span>{toFileName(screen.name)}</span>
+          </div>
+          <div className="ml-auto flex items-center gap-1">
+            <button
+              onClick={handleCopy}
+              className="p-1.5 text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-[#F5F2EF] rounded-lg transition-colors"
+              title="Copy code"
+            >
+              {copied ? (
+                <Check className="w-4 h-4 text-green-600" />
+              ) : (
+                <Copy className="w-4 h-4" />
+              )}
+            </button>
+            <button
+              onClick={handleDownload}
+              className="p-1.5 text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-[#F5F2EF] rounded-lg transition-colors"
+              title="Download file"
+            >
+              <Download className="w-4 h-4" />
+            </button>
+          </div>
         </div>
-        <div className="ml-auto flex items-center gap-1">
-          <button
-            onClick={handleCopy}
-            className="p-1.5 text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-[#F5F2EF] rounded-lg transition-colors"
-            title="Copy code"
-          >
-            {copied ? (
-              <Check className="w-4 h-4 text-green-600" />
-            ) : (
-              <Copy className="w-4 h-4" />
-            )}
-          </button>
-          <button
-            onClick={handleDownload}
-            className="p-1.5 text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-[#F5F2EF] rounded-lg transition-colors"
-            title="Download file"
-          >
-            <Download className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
+      )}
 
-      {/* Monaco Editor */}
-      <div className="flex-1 overflow-hidden">
-        <Editor
-          height="100%"
-          language="html"
-          theme="opendesign-warm"
-          value={screen.html}
-          beforeMount={handleEditorWillMount}
-          options={{
-            readOnly: true,
-            minimap: { enabled: true },
-            scrollBeyondLastLine: false,
-            fontSize: 13,
-            lineNumbers: "on",
-            folding: true,
-            wordWrap: "on",
-            automaticLayout: true,
-            scrollbar: {
-              vertical: "visible",
-              horizontal: "visible",
-            },
-            padding: { top: 16 },
-          }}
-        />
+      {/* Code display - lightweight pre for mobile, Monaco for desktop */}
+      <div className={isMobileView ? "h-[calc(100vh-180px)] overflow-y-auto bg-[#FAF8F5]" : "flex-1 overflow-hidden"}>
+        {isMobileView ? (
+          <SyntaxHighlighter
+            language="html"
+            style={mobileCodeTheme}
+            customStyle={{
+              margin: 0,
+              padding: "16px",
+              background: "#FAF8F5",
+              fontSize: "12px",
+              lineHeight: "1.6",
+            }}
+            wrapLongLines={true}
+          >
+            {screen.html}
+          </SyntaxHighlighter>
+        ) : (
+          <Editor
+            height="100%"
+            language="html"
+            theme="opendesign-warm"
+            value={screen.html}
+            beforeMount={handleEditorWillMount}
+            options={{
+              readOnly: true,
+              minimap: { enabled: true },
+              scrollBeyondLastLine: false,
+              fontSize: 13,
+              lineNumbers: "on",
+              folding: true,
+              wordWrap: "on",
+              automaticLayout: true,
+              scrollbar: {
+                vertical: "visible",
+                horizontal: "visible",
+              },
+              padding: { top: 16 },
+            }}
+          />
+        )}
       </div>
     </div>
   );
