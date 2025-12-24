@@ -309,7 +309,7 @@ function ChatInput({
           }
           disabled={disabled || isPasting}
           rows={1}
-          className="w-full bg-[#F7F5F2] text-[#1A1A1A] placeholder-[#A0A0A0] resize-none max-h-32 disabled:opacity-50 disabled:cursor-not-allowed text-[15px] leading-relaxed"
+          className="w-full bg-white text-[#1A1A1A] placeholder-[#B5B0A8] resize-none max-h-32 disabled:opacity-50 disabled:cursor-not-allowed text-[15px] leading-relaxed"
           style={{ border: 'none', boxShadow: 'none', outline: 'none', WebkitAppearance: 'none' }}
         />
 
@@ -1096,7 +1096,7 @@ export default function DesignPage() {
 
               {/* Cost Indicator (admin only) */}
               {isAdmin && (
-                <div className="px-3 py-2 border-t border-[#E8E4E0]">
+                <div className="px-3 pt-2">
                   <CostIndicator
                     usageLogs={usageLogs}
                     totalCost={totalSessionCost}
