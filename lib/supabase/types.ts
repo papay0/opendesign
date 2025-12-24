@@ -146,6 +146,50 @@ export interface Database {
           }
         ]
       }
+
+      /**
+       * Users table - stores user profile data synced from Clerk
+       * Created on first sign-in, updated on subsequent sign-ins
+       */
+      users: {
+        Row: {
+          id: string                    // UUID primary key
+          clerk_id: string              // Clerk user ID (unique)
+          email: string                 // User's email
+          name: string                  // Combined firstName + lastName
+          avatar_url: string | null     // Profile image URL from Clerk
+          role: 'regular' | 'admin'     // User role
+          created_at: string            // First sign-in timestamp
+          updated_at: string            // Last profile update
+          last_sign_in_at: string       // Last sign-in timestamp
+          sign_in_count: number         // Total sign-in count
+        }
+        Insert: {
+          id?: string
+          clerk_id: string
+          email: string
+          name: string
+          avatar_url?: string | null
+          role?: 'regular' | 'admin'
+          created_at?: string
+          updated_at?: string
+          last_sign_in_at?: string
+          sign_in_count?: number
+        }
+        Update: {
+          id?: string
+          clerk_id?: string
+          email?: string
+          name?: string
+          avatar_url?: string | null
+          role?: 'regular' | 'admin'
+          created_at?: string
+          updated_at?: string
+          last_sign_in_at?: string
+          sign_in_count?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -186,3 +230,10 @@ export type DesignMessage = Database['public']['Tables']['design_messages']['Row
 export type DesignMessageInsert = Database['public']['Tables']['design_messages']['Insert']
 /** Message update type */
 export type DesignMessageUpdate = Database['public']['Tables']['design_messages']['Update']
+
+/** User row type */
+export type User = Database['public']['Tables']['users']['Row']
+/** User insert type */
+export type UserInsert = Database['public']['Tables']['users']['Insert']
+/** User update type */
+export type UserUpdate = Database['public']['Tables']['users']['Update']

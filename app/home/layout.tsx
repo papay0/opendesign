@@ -16,6 +16,7 @@ import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Settings, Layers } from "lucide-react";
+import { useUserSync } from "@/lib/hooks/useUserSync";
 
 // ============================================================================
 // Layout Component
@@ -28,6 +29,9 @@ export default function AuthenticatedLayout({
 }) {
   const pathname = usePathname();
   const isProjectPage = pathname?.includes("/projects/");
+
+  // Sync user data to Supabase on first visit
+  useUserSync();
 
   // Project pages have their own full-screen layout
   if (isProjectPage) {
