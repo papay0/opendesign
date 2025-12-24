@@ -52,15 +52,20 @@ const HTML_CSS_RULES = `HTML/CSS RULES:
 - Include realistic placeholder content (names, dates, numbers, descriptions)`;
 
 const IMAGE_RULES = `IMAGES - CRITICAL:
-- Use this URL format for ALL images: https://www.opendesign.build/api/image?q=KEYWORDS&w=WIDTH&h=HEIGHT
-- Keywords should describe WHAT should be in the image (comma-separated, specific to the design)
+For GENERIC images (people, food, nature, business, etc.):
+- Use: https://www.opendesign.build/api/image?q=KEYWORDS&w=WIDTH&h=HEIGHT
 - Examples:
   - Avatar: https://www.opendesign.build/api/image?q=professional,headshot,portrait&w=48&h=48
-  - Food app: https://www.opendesign.build/api/image?q=sushi,japanese,restaurant&w=400&h=300
-  - Pokemon: https://www.opendesign.build/api/image?q=pokemon,pikachu,yellow-creature&w=200&h=200
+  - Food: https://www.opendesign.build/api/image?q=sushi,japanese,restaurant&w=400&h=300
   - Fitness: https://www.opendesign.build/api/image?q=gym,workout,fitness&w=600&h=400
-- Use 2-4 descriptive keywords that match the design context
-- NEVER use placeholder.com, unsplash.com, picsum.photos, or other image services`;
+
+For SPECIFIC domains, use these FREE public APIs you know:
+- Pokemon: https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/{POKEDEX_NUMBER}.png
+- Country flags: https://flagcdn.com/w160/{country-code}.png (e.g., us, fr, jp)
+- Avatars: https://api.dicebear.com/7.x/avataaars/svg?seed={name}
+- Logos/icons: Use inline SVG or emoji instead
+
+NEVER use placeholder.com, unsplash.com, picsum.photos, or broken/made-up URLs.`;
 
 const ICON_RULES = `ICONS - Use inline SVG:
 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="..."></path></svg>
