@@ -21,7 +21,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import {
-  Send,
+  ArrowUp,
   Loader2,
   ArrowLeft,
   Sparkles,
@@ -46,11 +46,13 @@ import { ImageUploadButton } from "../../components/ImageUploadButton";
 import { ImageLightbox, ClickableImage } from "../../components/ImageLightbox";
 import { SegmentedControl } from "../../components/SegmentedControl";
 import { useIsMobile } from "@/lib/hooks/useIsMobile";
+import ReactMarkdown from "react-markdown";
 import {
   validateImage,
   uploadImage,
 } from "@/lib/upload/image-upload";
 import { CostIndicator } from "../../components/CostIndicator";
+import { ModelSelector, getSelectedModel, setSelectedModel, type ModelId } from "../../components/ModelSelector";
 import { calculateCost } from "@/lib/constants/pricing";
 import { useUserSync } from "@/lib/hooks/useUserSync";
 
@@ -166,9 +168,15 @@ function ChatMessage({
             />
           </div>
         )}
-        <p className="text-sm leading-relaxed whitespace-pre-wrap text-[#1A1A1A]">
-          {message.content}
-        </p>
+        {isUser ? (
+          <p className="text-sm leading-relaxed whitespace-pre-wrap text-[#1A1A1A]">
+            {message.content}
+          </p>
+        ) : (
+          <div className="text-sm leading-relaxed text-[#1A1A1A] prose prose-sm prose-stone max-w-none">
+            <ReactMarkdown>{message.content}</ReactMarkdown>
+          </div>
+        )}
       </div>
     </motion.div>
   );
@@ -189,6 +197,9 @@ function ChatInput({
   imageUrl,
   onImageChange,
   onImageClick,
+  selectedModel,
+  onModelChange,
+  isAdmin,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -200,6 +211,9 @@ function ChatInput({
   imageUrl: string | null;
   onImageChange: (url: string | null) => void;
   onImageClick?: (imageUrl: string) => void;
+  selectedModel: ModelId;
+  onModelChange: (model: ModelId) => void;
+  isAdmin: boolean;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isPasting, setIsPasting] = useState(false);
@@ -256,96 +270,97 @@ function ChatInput({
   };
 
   return (
-    <div className="p-3 bg-gradient-to-t from-white via-white to-white/95">
-      {/* Elevated input container with subtle shadow */}
-      <div className="relative">
-        {/* Soft glow effect behind */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#B8956F]/5 to-[#B8956F]/10 rounded-2xl blur-xl scale-[1.02] pointer-events-none" />
-
-        {/* Main container */}
-        <div className="relative bg-white rounded-2xl shadow-[0_2px_16px_-2px_rgba(184,149,111,0.12)] border border-[#E8E4E0]/80 overflow-hidden transition-all duration-300 focus-within:shadow-[0_4px_20px_-2px_rgba(184,149,111,0.18)] focus-within:border-[#B8956F]/30">
-          {/* Image preview - elegant card when attached */}
-          {imageUrl && (
-            <div className="px-3 pt-3">
-              <div className="flex items-center gap-3 p-2.5 bg-gradient-to-r from-[#FAF8F5] to-[#F5F2EF] rounded-xl border border-[#E8E4E0]/60">
-                <div className="relative">
-                  <ClickableImage
-                    src={imageUrl}
-                    alt="Reference"
-                    className="w-11 h-11 rounded-lg shadow-sm ring-2 ring-white overflow-hidden"
-                    onClick={() => onImageClick?.(imageUrl)}
-                  />
-                  <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-[#B8956F] rounded-full flex items-center justify-center shadow-sm pointer-events-none">
-                    <Sparkles className="w-2.5 h-2.5 text-white" />
-                  </div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-[#1A1A1A]">Reference attached</p>
-                  <p className="text-xs text-[#9A9A9A]">Click to preview</p>
-                </div>
-                <button
-                  onClick={() => onImageChange(null)}
-                  className="text-xs text-[#9A9A9A] hover:text-red-500 px-2 py-1 rounded-md hover:bg-red-50/80 transition-all"
-                  type="button"
-                >
-                  Remove
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Input row */}
-          <div className="flex items-end gap-2 p-2.5 relative">
-            {/* Image upload button - hide when image attached */}
-            {!imageUrl && (
-              <ImageUploadButton
-                userId={userId}
-                projectId={projectId}
-                onImageUploaded={onImageChange}
-                onImageRemoved={() => onImageChange(null)}
-                currentImageUrl={imageUrl}
-                disabled={disabled || isLoading || isPasting}
+    <div className="p-3">
+      {/* Main container - white floating card with subtle shadow */}
+      <div className="relative bg-white rounded-[20px] px-4 py-3 shadow-[0_2px_12px_rgba(0,0,0,0.08)]">
+        {/* Image preview */}
+        {imageUrl && (
+          <div className="mb-3">
+            <div className="flex items-center gap-3 p-2 bg-white/60 rounded-xl">
+              <ClickableImage
+                src={imageUrl}
+                alt="Reference"
+                className="w-10 h-10 rounded-lg overflow-hidden"
+                onClick={() => onImageClick?.(imageUrl)}
               />
-            )}
-            <div className="flex-1 relative">
-              <textarea
-                ref={textareaRef}
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                onKeyDown={handleKeyDown}
-                onPaste={handlePaste}
-                placeholder={
-                  disabled
-                    ? "Configure your API key in Settings first..."
-                    : "Describe changes or paste an image..."
-                }
-                disabled={disabled || isPasting}
-                rows={1}
-                className="w-full bg-[#FAF8F5]/60 rounded-xl py-2.5 px-3.5 text-[#1A1A1A] placeholder-[#B5B0A8] focus:outline-none focus:bg-[#FAF8F5] resize-none max-h-32 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-transparent focus:border-[#E8E4E0]"
-              />
+              <span className="text-sm text-[#6B6B6B] flex-1">Reference image</span>
+              <button
+                onClick={() => onImageChange(null)}
+                className="text-xs text-[#9A9A9A] hover:text-red-500 px-2 py-1 rounded-md hover:bg-red-50/80 transition-all"
+                type="button"
+              >
+                ✕
+              </button>
             </div>
-            <button
-              onClick={onSubmit}
-              disabled={disabled || isLoading || isPasting || !value.trim()}
-              className="w-10 h-10 bg-gradient-to-br from-[#B8956F] to-[#A6845F] rounded-xl flex items-center justify-center hover:from-[#A6845F] hover:to-[#957555] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 shadow-md hover:shadow-lg hover:shadow-[#B8956F]/15 active:scale-[0.96]"
-            >
-              {isLoading ? (
-                <Loader2 className="w-4 h-4 text-white animate-spin" />
-              ) : (
-                <Send className="w-4 h-4 text-white" />
-              )}
-            </button>
-            {/* Paste upload overlay */}
-            {isPasting && (
-              <div className="absolute inset-0 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center z-10">
-                <div className="flex items-center gap-2 text-[#B8956F]">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span className="text-sm font-medium">Uploading...</span>
-                </div>
-              </div>
+          </div>
+        )}
+
+        {/* Textarea - no borders, same bg as container */}
+        <textarea
+          ref={textareaRef}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onPaste={handlePaste}
+          placeholder={
+            disabled
+              ? "Configure API key first..."
+              : "Describe changes..."
+          }
+          disabled={disabled || isPasting}
+          rows={1}
+          className="w-full bg-[#F7F5F2] text-[#1A1A1A] placeholder-[#A0A0A0] resize-none max-h-32 disabled:opacity-50 disabled:cursor-not-allowed text-[15px] leading-relaxed"
+          style={{ border: 'none', boxShadow: 'none', outline: 'none', WebkitAppearance: 'none' }}
+        />
+
+        {/* Bottom row - actions left, send right */}
+        <div className="flex items-center justify-between mt-2">
+          {/* Left side - action buttons */}
+          <div className="flex items-center gap-1">
+            <ImageUploadButton
+              userId={userId}
+              projectId={projectId}
+              onImageUploaded={onImageChange}
+              onImageRemoved={() => onImageChange(null)}
+              currentImageUrl={null}
+              disabled={disabled || isLoading || isPasting || !!imageUrl}
+            />
+            {/* Model selector - admin only */}
+            {isAdmin && (
+              <>
+                <div className="w-px h-5 bg-[#E8E4E0] mx-1" />
+                <ModelSelector
+                  value={selectedModel}
+                  onChange={onModelChange}
+                  compact
+                />
+              </>
             )}
           </div>
+
+          {/* Right side - send button */}
+          <button
+            onClick={onSubmit}
+            disabled={disabled || isLoading || isPasting || !value.trim()}
+            className="w-9 h-9 bg-[#C9B896] rounded-full flex items-center justify-center hover:bg-[#B8A77D] transition-all disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 flex-shrink-0"
+          >
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 text-white animate-spin" />
+            ) : (
+              <ArrowUp className="w-[18px] h-[18px] text-white stroke-[2.5]" />
+            )}
+          </button>
         </div>
+
+        {/* Paste upload overlay */}
+        {isPasting && (
+          <div className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-2xl flex items-center justify-center z-10">
+            <div className="flex items-center gap-2 text-[#B8956F]">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span className="text-sm font-medium">Uploading...</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -423,6 +438,7 @@ export default function DesignPage() {
   const [mobileActiveTab, setMobileActiveTab] = useState<MobileTab>("chat");
   const [usageLogs, setUsageLogs] = useState<UsageLog[]>([]);
   const [totalSessionCost, setTotalSessionCost] = useState(0);
+  const [selectedModel, setSelectedModelState] = useState<ModelId>("gemini-3-pro-preview");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const userMessageRef = useRef<Message | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -476,6 +492,18 @@ export default function DesignPage() {
   useEffect(() => {
     const config = getApiConfig();
     setHasApiKey(!!config?.key);
+  }, []);
+
+  // Load selected model from localStorage on mount
+  useEffect(() => {
+    const savedModel = getSelectedModel();
+    setSelectedModelState(savedModel);
+  }, []);
+
+  // Handle model change
+  const handleModelChange = useCallback((model: ModelId) => {
+    setSelectedModelState(model);
+    setSelectedModel(model);
   }, []);
 
   // Ref to store the submit function for auto-generation
@@ -885,7 +913,7 @@ export default function DesignPage() {
       return;
     }
 
-    // Start streaming with platform and image
+    // Start streaming with platform, image, and model
     await startStreaming(
       "/api/ai/generate-design",
       {
@@ -899,13 +927,14 @@ export default function DesignPage() {
         })),
         platform: project?.platform || "mobile",
         imageUrl: currentImageUrl,
+        model: selectedModel,
       },
       {
         "x-api-key": apiConfig.key,
         "x-provider": apiConfig.provider,
       }
     );
-  }, [input, isStreaming, hasApiKey, startStreaming, projectId, savedScreens, messages, project?.platform, pendingImageUrl]);
+  }, [input, isStreaming, hasApiKey, startStreaming, projectId, savedScreens, messages, project?.platform, pendingImageUrl, selectedModel]);
 
   // Store handleSubmit in ref for auto-generation
   submitRef.current = handleSubmit;
@@ -1088,6 +1117,9 @@ export default function DesignPage() {
                 imageUrl={pendingImageUrl}
                 onImageChange={setPendingImageUrl}
                 onImageClick={setLightboxImage}
+                selectedModel={selectedModel}
+                onModelChange={handleModelChange}
+                isAdmin={isAdmin}
               />
             </div>
 
@@ -1206,6 +1238,9 @@ export default function DesignPage() {
               imageUrl={pendingImageUrl}
               onImageChange={setPendingImageUrl}
               onImageClick={setLightboxImage}
+              selectedModel={selectedModel}
+              onModelChange={handleModelChange}
+              isAdmin={isAdmin}
             />
           </div>
         )}

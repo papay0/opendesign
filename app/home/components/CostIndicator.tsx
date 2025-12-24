@@ -1,10 +1,18 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Sparkles, ChevronDown, Zap } from "lucide-react";
+import { Sparkles, ChevronDown, Zap, Cpu } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { UsageLog } from "@/lib/supabase/types";
 import { formatCost, formatTokens } from "@/lib/constants/pricing";
+
+// Helper to get short model name for display
+function getModelShortName(model: string | undefined): string {
+  if (!model) return "Pro";
+  if (model.includes("flash")) return "Flash";
+  if (model.includes("pro")) return "Pro";
+  return model.split("/").pop()?.split("-")[0] || "Pro";
+}
 
 interface CostIndicatorProps {
   usageLogs: UsageLog[];
@@ -44,18 +52,16 @@ export function CostIndicator({ usageLogs, totalCost, isVisible }: CostIndicator
       {/* Cost Badge - Elegant pill design */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="group flex items-center gap-2 px-3.5 py-2 bg-gradient-to-r from-[#F5F2EF] to-[#EBE7E3] hover:from-[#EBE7E3] hover:to-[#E5E1DC] border border-[#E8E4E0] rounded-xl transition-all duration-300 shadow-sm hover:shadow-md"
+        className="group flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-[#F5F2EF] to-[#EBE7E3] hover:from-[#EBE7E3] hover:to-[#E5E1DC] border border-[#E8E4E0] rounded-xl transition-all duration-300 shadow-sm hover:shadow-md"
       >
-        <div className="flex items-center justify-center w-5 h-5 rounded-full bg-[#B8956F]/10">
-          <Sparkles className="w-3 h-3 text-[#B8956F]" />
-        </div>
+        <Sparkles className="w-3.5 h-3.5 text-[#B8956F]" />
         <span className="text-sm font-medium text-[#1A1A1A] tabular-nums">
           {formatCost(totalCost)}
         </span>
         {hasCacheHits && (
-          <div className="flex items-center justify-center w-4 h-4 rounded-full bg-amber-100" title="Cache savings applied">
-            <Zap className="w-2.5 h-2.5 text-amber-600" />
-          </div>
+          <span title="Cache savings applied">
+            <Zap className="w-3 h-3 text-amber-500" />
+          </span>
         )}
         <motion.div
           animate={{ rotate: isExpanded ? 180 : 0 }}
@@ -126,6 +132,10 @@ export function CostIndicator({ usageLogs, totalCost, isVisible }: CostIndicator
                       </span>
                       <span className="text-xs text-[#9A9A9A]">
                         {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      <span className="flex items-center gap-1 text-[10px] font-medium text-[#6B6B6B] bg-[#F5F2EF] px-1.5 py-0.5 rounded">
+                        <Cpu className="w-2.5 h-2.5" />
+                        {getModelShortName(log.model)}
                       </span>
                     </div>
                     <span className="text-sm font-semibold text-[#B8956F] tabular-nums">

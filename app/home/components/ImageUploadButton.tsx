@@ -98,7 +98,7 @@ export function ImageUploadButton({
             <img
               src={displayUrl}
               alt="Upload preview"
-              className="w-11 h-11 object-cover rounded-xl ring-2 ring-[#B8956F]/20 shadow-sm"
+              className="w-9 h-9 object-cover rounded-xl ring-2 ring-[#B8956F]/20 shadow-sm"
             />
             {isUploading && (
               <div className="absolute inset-0 bg-[#B8956F]/80 rounded-xl flex items-center justify-center backdrop-blur-sm">
@@ -118,18 +118,18 @@ export function ImageUploadButton({
           )}
         </div>
       ) : (
-        // Upload button - inviting with dashed border
+        // Upload button - clean minimal icon
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={disabled || isUploading}
-          className="w-11 h-11 rounded-xl flex items-center justify-center text-[#B5B0A8] border-2 border-dashed border-[#E8E4E0] hover:border-[#B8956F]/40 hover:text-[#B8956F] hover:bg-[#B8956F]/5 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 group"
-          title={`Attach style reference (max ${MAX_IMAGE_SIZE / 1024 / 1024}MB)`}
+          className="w-8 h-8 rounded-full flex items-center justify-center text-[#9A9A9A] hover:text-[#B8956F] hover:bg-[#B8956F]/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 group"
+          title={`Attach image (max ${MAX_IMAGE_SIZE / 1024 / 1024}MB)`}
           type="button"
         >
           {isUploading ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
+            <Loader2 className="w-[18px] h-[18px] animate-spin" />
           ) : (
-            <ImagePlus className="w-5 h-5 transition-transform group-hover:scale-110" />
+            <ImagePlus className="w-[18px] h-[18px] transition-transform group-hover:scale-110" />
           )}
         </button>
       )}

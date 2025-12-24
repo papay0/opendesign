@@ -198,26 +198,24 @@ body {
    Form Elements
    ============================================================================ */
 
-/* Text input styling */
-input[type="text"],
-input[type="email"],
-textarea {
+/* Text input styling - only apply to inputs with .form-input class */
+input.form-input,
+textarea.form-input {
   background: white;
   border: 1px solid var(--border);
   color: var(--foreground);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-input[type="text"]:focus,
-input[type="email"]:focus,
-textarea:focus {
+input.form-input:focus,
+textarea.form-input:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-light);
 }
 
-input::placeholder,
-textarea::placeholder {
+input.form-input::placeholder,
+textarea.form-input::placeholder {
   color: var(--foreground-subtle);
 }
 

@@ -38,6 +38,8 @@ import { PlatformSelector } from "./components/PlatformSelector";
 import { DashboardSkeleton } from "./components/Skeleton";
 import { ImageUploadButton } from "./components/ImageUploadButton";
 import { ImageLightbox, ClickableImage } from "./components/ImageLightbox";
+import { ModelSelector, getSelectedModel, type ModelId } from "./components/ModelSelector";
+import { useUserSync } from "@/lib/hooks/useUserSync";
 import type { Platform } from "@/lib/constants/platforms";
 import {
   validateImage,
@@ -214,18 +216,26 @@ function PromptInput({
   onSubmit,
   isLoading,
   userId,
+  isAdmin,
 }: {
-  onSubmit: (prompt: string, platform: Platform, imageUrl: string | null) => Promise<void>;
+  onSubmit: (prompt: string, platform: Platform, imageUrl: string | null, model: ModelId) => Promise<void>;
   isLoading: boolean;
   userId: string;
+  isAdmin: boolean;
 }) {
   const [prompt, setPrompt] = useState("");
   const [platform, setPlatform] = useState<Platform>("mobile");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isPasting, setIsPasting] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [selectedModel, setSelectedModelState] = useState<ModelId>("gemini-3-pro-preview");
   // Generate a temporary project ID for uploading before project creation
   const [tempProjectId] = useState(() => crypto.randomUUID());
+
+  // Load selected model on mount
+  useEffect(() => {
+    setSelectedModelState(getSelectedModel());
+  }, []);
 
   const handleSubmit = async () => {
     if (!prompt.trim() || isLoading) return;
@@ -233,7 +243,7 @@ function PromptInput({
     const submittedImageUrl = imageUrl;
     setPrompt(""); // Clear input immediately
     setImageUrl(null); // Clear image
-    await onSubmit(submittedPrompt, platform, submittedImageUrl);
+    await onSubmit(submittedPrompt, platform, submittedImageUrl, selectedModel);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -365,7 +375,7 @@ function PromptInput({
 
         {/* Bottom toolbar with subtle separator */}
         <div className="flex items-center justify-between mt-4 pt-4 border-t border-[#E8E4E0]/60">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {/* Hide upload button when image is attached (shown in preview card above) */}
             {!imageUrl && (
               <ImageUploadButton
@@ -377,8 +387,15 @@ function PromptInput({
                 disabled={isLoading}
               />
             )}
-            {!imageUrl && (
-              <span className="text-xs text-[#B5B0A8] hidden sm:block">Add a style reference or paste an image</span>
+            {/* Model selector - admin only */}
+            {isAdmin && (
+              <>
+                <div className="w-px h-5 bg-[#E8E4E0]" />
+                <ModelSelector
+                  value={selectedModel}
+                  onChange={setSelectedModelState}
+                />
+              </>
             )}
           </div>
           <button
@@ -417,6 +434,8 @@ function PromptInput({
 export default function DashboardPage() {
   const { user, isLoaded } = useUser();
   const router = useRouter();
+  const { dbUser } = useUserSync();
+  const isAdmin = dbUser?.role === "admin";
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -458,8 +477,9 @@ export default function DashboardPage() {
   }, [isLoaded, user]);
 
   // Create new project from prompt
-  const handleCreateProject = async (prompt: string, platform: Platform, imageUrl: string | null) => {
+  const handleCreateProject = async (prompt: string, platform: Platform, imageUrl: string | null, _model: ModelId) => {
     if (!user) return;
+    // Note: model is stored in localStorage and will be used when generating designs
 
     setIsCreating(true);
     const supabase = createClient();
@@ -532,7 +552,12 @@ export default function DashboardPage() {
 
       {/* Prompt Input (only show if API key is configured) */}
       {hasApiKey && user && (
-        <PromptInput onSubmit={handleCreateProject} isLoading={isCreating} userId={user.id} />
+        <PromptInput
+          onSubmit={handleCreateProject}
+          isLoading={isCreating}
+          userId={user.id}
+          isAdmin={isAdmin}
+        />
       )}
 
       {/* Projects Section */}

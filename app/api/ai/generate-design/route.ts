@@ -45,7 +45,7 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     // Parse request body
-    const { prompt, existingScreens, conversationHistory, platform, imageUrl } = await request.json();
+    const { prompt, existingScreens, conversationHistory, platform, imageUrl, model: requestedModel } = await request.json();
 
     if (!prompt) {
       return new Response(
@@ -94,21 +94,29 @@ IMPORTANT:
 - Do NOT include PROJECT_NAME or PROJECT_ICON for follow-up requests`;
     }
 
+    // Determine which model to use (default: gemini-3-pro-preview)
+    const SUPPORTED_MODELS = ["gemini-3-pro-preview", "gemini-3-flash-preview"];
+    const selectedModel = requestedModel && SUPPORTED_MODELS.includes(requestedModel)
+      ? requestedModel
+      : "gemini-3-pro-preview";
+
+    console.log(`[Design Stream] Using model: ${selectedModel}`);
+
     // Create the appropriate model based on provider
     let model;
 
     if (provider === "gemini") {
-      // Direct Google Gemini API - use Gemini 3 Pro Preview
+      // Direct Google Gemini API
       const google = createGoogleGenerativeAI({
         apiKey: apiKey,
       });
-      model = google("gemini-3-pro-preview");
+      model = google(selectedModel);
     } else {
-      // OpenRouter (default) - use Gemini 3 Pro Preview
+      // OpenRouter (default)
       const openrouter = createOpenRouter({
         apiKey: apiKey,
       });
-      model = openrouter.chat("google/gemini-3-pro-preview");
+      model = openrouter.chat(`google/${selectedModel}`);
     }
 
     // Build messages array with support for multimodal content
@@ -185,7 +193,7 @@ IMPORTANT:
           // Get token usage after streaming completes
           try {
             const usage = await result.usage;
-            const modelName = provider === "gemini" ? "gemini-3-pro-preview" : "google/gemini-3-pro-preview";
+            const modelName = provider === "gemini" ? selectedModel : `google/${selectedModel}`;
 
             // Send usage data before completion signal
             const usageData = `data: ${JSON.stringify({
