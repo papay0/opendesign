@@ -1,54 +1,47 @@
 /**
  * Image Proxy API
  *
- * Proxies image requests to Pexels API for contextually relevant stock photos.
- * Usage: /api/image?q=dog,puppy&w=200&h=300
+ * Proxies image requests to Brave Search API for contextually relevant images.
+ * Unlike stock photo APIs, Brave can find ANY image including Pokemon, cars, logos, etc.
  *
- * This allows AI-generated designs to reference images directly without post-processing.
+ * Usage: /api/image?q=pikachu,pokemon&w=200&h=200
+ *
+ * Caching Strategy:
+ * - Uses Supabase for persistent cache (shared across all users/deployments)
+ * - Cache entries expire after 7 days
+ * - This dramatically reduces API calls (free tier: 2,000/month, 1 req/sec)
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
-const PEXELS_API_URL = "https://api.pexels.com/v1/search";
+const BRAVE_IMAGE_API_URL = "https://api.search.brave.com/res/v1/images/search";
 
-// In-memory cache for image URLs (query -> Pexels image URL)
-const imageCache = new Map<string, { url: string; timestamp: number }>();
-const CACHE_TTL = 1000 * 60 * 60; // 1 hour
+// Lazy Supabase client initialization
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
-interface PexelsPhoto {
-  src: {
-    original: string;
-    large2x: string;
-    large: string;
-    medium: string;
-    small: string;
-    tiny: string;
+interface BraveImageResult {
+  type: string;
+  title: string;
+  url: string;
+  source: string;
+  thumbnail: {
+    src: string;
+  };
+  properties: {
+    url: string;
+    placeholder?: string;
   };
 }
 
-interface PexelsResponse {
-  photos: PexelsPhoto[];
-}
-
-/**
- * Determines orientation based on aspect ratio
- */
-function getOrientation(width: number, height: number): string {
-  const ratio = width / height;
-  if (ratio > 1.2) return "landscape";
-  if (ratio < 0.8) return "portrait";
-  return "square";
-}
-
-/**
- * Select best image size based on requested dimensions
- */
-function selectImageSize(photo: PexelsPhoto, width: number): string {
-  if (width <= 100) return photo.src.tiny;
-  if (width <= 200) return photo.src.small;
-  if (width <= 400) return photo.src.medium;
-  if (width <= 1000) return photo.src.large;
-  return photo.src.large2x;
+interface BraveImageResponse {
+  type: string;
+  results: BraveImageResult[];
 }
 
 /**
@@ -57,6 +50,18 @@ function selectImageSize(photo: PexelsPhoto, width: number): string {
 function getFallbackUrl(query: string, width: number, height: number): string {
   const seed = query.split(",")[0]?.trim().replace(/\s+/g, "-") || "default";
   return `https://picsum.photos/seed/${seed}/${width}/${height}`;
+}
+
+/**
+ * Normalize query for consistent cache keys
+ */
+function normalizeQuery(query: string): string {
+  return query
+    .toLowerCase()
+    .split(",")
+    .map((k) => k.trim())
+    .sort()
+    .join(" ");
 }
 
 export async function GET(request: NextRequest) {
@@ -76,58 +81,86 @@ export async function GET(request: NextRequest) {
   const safeWidth = Math.min(Math.max(width, 50), 2000);
   const safeHeight = Math.min(Math.max(height, 50), 2000);
 
-  // Create cache key
-  const cacheKey = `${query}-${safeWidth}x${safeHeight}`;
+  // Normalize query for cache key (lowercase, sorted, trimmed)
+  const normalizedQuery = normalizeQuery(query);
+  const supabase = getSupabaseAdmin();
 
-  // Check cache
-  const cached = imageCache.get(cacheKey);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-    return NextResponse.redirect(cached.url);
+  // Check Supabase cache first
+  try {
+    const { data: cached } = await supabase
+      .from("image_cache")
+      .select("image_url")
+      .eq("query", normalizedQuery)
+      .gt("expires_at", new Date().toISOString())
+      .single();
+
+    if (cached?.image_url) {
+      console.log(`[Image Proxy] Cache HIT for "${normalizedQuery}"`);
+      return NextResponse.redirect(cached.image_url);
+    }
+  } catch {
+    // Cache miss or error - continue to API
   }
 
-  const apiKey = process.env.PEXELS_API_KEY;
+  const apiKey = process.env.BRAVE_SEARCH_API_KEY;
 
   if (!apiKey) {
-    console.warn("[Image Proxy] No PEXELS_API_KEY configured, using fallback");
+    console.warn("[Image Proxy] No BRAVE_SEARCH_API_KEY configured, using fallback");
     return NextResponse.redirect(getFallbackUrl(query, safeWidth, safeHeight));
   }
 
   try {
-    const orientation = getOrientation(safeWidth, safeHeight);
-    const searchQuery = query.split(",").map((k) => k.trim()).join(" ");
+    console.log(`[Image Proxy] Cache MISS - calling Brave API for "${normalizedQuery}"`);
 
-    const url = new URL(PEXELS_API_URL);
-    url.searchParams.set("query", searchQuery);
-    url.searchParams.set("per_page", "1");
-    url.searchParams.set("orientation", orientation);
+    const url = new URL(BRAVE_IMAGE_API_URL);
+    url.searchParams.set("q", normalizedQuery);
+    url.searchParams.set("count", "1");
+    url.searchParams.set("safesearch", "strict");
 
     const response = await fetch(url.toString(), {
       headers: {
-        Authorization: apiKey,
+        "Accept": "application/json",
+        "Accept-Encoding": "gzip",
+        "X-Subscription-Token": apiKey,
       },
-      // Cache the fetch for 1 hour
-      next: { revalidate: 3600 },
     });
 
     if (!response.ok) {
-      console.error(`[Image Proxy] Pexels error: ${response.status}`);
+      console.error(`[Image Proxy] Brave error: ${response.status}`);
       return NextResponse.redirect(getFallbackUrl(query, safeWidth, safeHeight));
     }
 
-    const data: PexelsResponse = await response.json();
+    const data: BraveImageResponse = await response.json();
 
-    if (!data.photos || data.photos.length === 0) {
-      console.log(`[Image Proxy] No results for "${searchQuery}"`);
+    if (!data.results || data.results.length === 0) {
+      console.log(`[Image Proxy] No results for "${normalizedQuery}"`);
       return NextResponse.redirect(getFallbackUrl(query, safeWidth, safeHeight));
     }
 
-    const photo = data.photos[0];
-    const imageUrl = selectImageSize(photo, safeWidth);
+    const result = data.results[0];
+    // Use the thumbnail for faster loading, or properties.url for full image
+    const imageUrl = result.thumbnail?.src || result.properties?.url;
 
-    // Cache the result
-    imageCache.set(cacheKey, { url: imageUrl, timestamp: Date.now() });
+    if (!imageUrl) {
+      console.log(`[Image Proxy] No image URL in result for "${normalizedQuery}"`);
+      return NextResponse.redirect(getFallbackUrl(query, safeWidth, safeHeight));
+    }
 
-    // Redirect to the actual image
+    // Save to Supabase cache in background (don't wait - fire and forget)
+    supabase
+      .from("image_cache")
+      .upsert(
+        {
+          query: normalizedQuery,
+          image_url: imageUrl,
+          created_at: new Date().toISOString(),
+          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        },
+        { onConflict: "query" }
+      )
+      .then(() => console.log(`[Image Proxy] Cached "${normalizedQuery}"`));
+
+    // Redirect immediately (don't wait for cache write)
     return NextResponse.redirect(imageUrl);
   } catch (error) {
     console.error("[Image Proxy] Error:", error);

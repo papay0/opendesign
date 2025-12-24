@@ -52,18 +52,15 @@ const HTML_CSS_RULES = `HTML/CSS RULES:
 - Include realistic placeholder content (names, dates, numbers, descriptions)`;
 
 const IMAGE_RULES = `IMAGES - CRITICAL:
-For GENERIC images (people, food, nature, business, etc.):
-- Use: https://www.opendesign.build/api/image?q=KEYWORDS&w=WIDTH&h=HEIGHT
+Use our image API for ALL images - it can find anything (Pokemon, cars, food, people, logos, etc.):
+- URL format: https://www.opendesign.build/api/image?q=KEYWORDS&w=WIDTH&h=HEIGHT
+- Use descriptive keywords separated by commas for best results
 - Examples:
+  - Pokemon: https://www.opendesign.build/api/image?q=pikachu,pokemon&w=200&h=200
   - Avatar: https://www.opendesign.build/api/image?q=professional,headshot,portrait&w=48&h=48
   - Food: https://www.opendesign.build/api/image?q=sushi,japanese,restaurant&w=400&h=300
+  - Cars: https://www.opendesign.build/api/image?q=tesla,model-s,electric-car&w=400&h=300
   - Fitness: https://www.opendesign.build/api/image?q=gym,workout,fitness&w=600&h=400
-
-For SPECIFIC domains, use these FREE public APIs you know:
-- Pokemon: https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/{POKEDEX_NUMBER}.png
-- Country flags: https://flagcdn.com/w160/{country-code}.png (e.g., us, fr, jp)
-- Avatars: https://api.dicebear.com/7.x/avataaars/svg?seed={name}
-- Logos/icons: Use inline SVG or emoji instead
 
 NEVER use placeholder.com, unsplash.com, picsum.photos, or broken/made-up URLs.`;
 
