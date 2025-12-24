@@ -280,17 +280,23 @@ function HeroSection() {
   return (
     <section className="pt-32 pb-24 px-6" aria-label="AI App Designer Hero">
       <div className="max-w-6xl mx-auto">
-        {/* Editorial badge */}
+        {/* Open Source badge */}
         <motion.div
           variants={fadeIn}
           initial="hidden"
           animate="visible"
           className="mb-8"
         >
-          <span className="inline-flex items-center gap-2 text-sm text-[#6B6B6B]">
-            <span className="w-2 h-2 rounded-full bg-[#B8956F]" />
-            Open Source · AI-Powered Design
-          </span>
+          <a
+            href="https://github.com/papay0/opendesign"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#E8E4E0] bg-white/50 text-sm text-[#1A1A1A] hover:bg-white hover:border-[#1A1A1A] hover:shadow-sm transition-all"
+          >
+            <Github className="w-4 h-4" />
+            Open Source
+            <ArrowRight className="w-3 h-3 text-[#6B6B6B]" />
+          </a>
         </motion.div>
 
         {/* Main headline - Large serif typography with SEO keywords */}
