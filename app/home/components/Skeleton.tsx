@@ -23,56 +23,76 @@ export function Skeleton({ className }: SkeletonProps) {
 // Dashboard/Home page skeleton
 export function DashboardSkeleton() {
   return (
-    <div className="max-w-6xl mx-auto px-6 py-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
       {/* Welcome Header */}
-      <div className="mb-8">
-        <Skeleton className="h-10 w-72 mb-2" />
-        <Skeleton className="h-5 w-48" />
+      <div className="mb-6 sm:mb-8">
+        <Skeleton className="h-8 sm:h-10 w-56 sm:w-72 mb-1 sm:mb-2" />
+        <Skeleton className="h-4 sm:h-5 w-40 sm:w-48" />
       </div>
 
       {/* Prompt Input - Matches new elevated card design */}
-      <div className="relative bg-white rounded-3xl mb-8 shadow-[0_4px_24px_-4px_rgba(184,149,111,0.15)] p-6">
-        {/* Header with title and platform selector */}
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <Skeleton className="h-7 w-64 mb-2" />
-            <Skeleton className="h-4 w-56" />
+      <div className="relative bg-white rounded-2xl sm:rounded-3xl mb-6 sm:mb-8 shadow-[0_2px_16px_-4px_rgba(184,149,111,0.12)] sm:shadow-[0_4px_24px_-4px_rgba(184,149,111,0.15)] p-5 sm:p-6">
+        {/* Header - stacks on mobile */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-5">
+          <div className="flex-1">
+            <Skeleton className="h-6 sm:h-7 w-full sm:w-64 mb-1 sm:mb-2" />
+            <Skeleton className="h-4 w-3/4 sm:w-56" />
           </div>
-          <Skeleton className="h-10 w-44 rounded-xl" />
+          <Skeleton className="h-10 w-44 rounded-lg self-start sm:self-center" />
         </div>
 
         {/* Textarea area */}
-        <Skeleton className="h-24 w-full rounded-2xl mb-4" />
+        <Skeleton className="h-24 w-full rounded-xl sm:rounded-2xl mb-4" />
 
-        {/* Bottom toolbar with separator */}
-        <div className="flex items-center justify-between pt-4 border-t border-[#E8E4E0]/60">
-          <div className="flex items-center gap-3">
-            <Skeleton className="w-11 h-11 rounded-xl" />
-            <Skeleton className="h-4 w-44 hidden sm:block" />
+        {/* Bottom toolbar - stacks on mobile */}
+        <div className="pt-4 border-t border-[#E8E4E0]/60">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <Skeleton className="w-8 h-8 rounded-full" />
+            </div>
+            <Skeleton className="h-12 w-full sm:w-32 rounded-xl" />
           </div>
-          <Skeleton className="h-12 w-32 rounded-xl" />
         </div>
       </div>
 
       {/* Projects Section */}
       <div>
-        <Skeleton className="h-8 w-36 mb-6" />
+        <Skeleton className="h-6 sm:h-8 w-28 sm:w-36 mb-4 sm:mb-6" />
 
-        {/* Project Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {/* Mobile: Compact horizontal list, Desktop: Grid */}
+        {/* Mobile skeleton - horizontal cards */}
+        <div className="sm:hidden space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="bg-white border border-[#E8E4E0] rounded-xl p-3 flex items-center gap-3"
+            >
+              <Skeleton className="w-14 h-14 rounded-xl flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <Skeleton className="h-4 w-3/4 mb-1.5" />
+                <Skeleton className="h-3 w-full mb-1.5" />
+                <Skeleton className="h-3 w-16" />
+              </div>
+              <Skeleton className="w-6 h-6 rounded flex-shrink-0" />
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop skeleton - grid */}
+        <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className="bg-white border border-[#E8E4E0] rounded-2xl overflow-hidden"
+              className="bg-white border border-[#E8E4E0] rounded-xl sm:rounded-2xl overflow-hidden"
             >
               {/* Preview area with emoji */}
               <div className="aspect-[4/3] bg-[#F5F2EF] flex items-center justify-center border-b border-[#E8E4E0]">
-                <Skeleton className="w-16 h-16 rounded-2xl" />
+                <Skeleton className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl" />
               </div>
               {/* Content */}
-              <div className="p-4">
-                <Skeleton className="h-5 w-3/4 mb-2" />
-                <Skeleton className="h-4 w-full mb-3" />
+              <div className="p-3 sm:p-4">
+                <Skeleton className="h-5 w-3/4 mb-1.5 sm:mb-2" />
+                <Skeleton className="h-4 w-full mb-2.5 sm:mb-3" />
                 <div className="flex items-center justify-between">
                   <Skeleton className="h-4 w-16" />
                   <Skeleton className="h-6 w-6 rounded" />
