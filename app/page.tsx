@@ -102,6 +102,34 @@ const examplePrompts = [
   "Podcast app with dark mode",
 ];
 
+const useCases = [
+  {
+    title: "Startup Founders",
+    description:
+      "Validate app ideas visually before investing in design. Create pitch deck mockups for investor meetings.",
+  },
+  {
+    title: "Indie Developers",
+    description:
+      "Prototype app ideas without hiring a designer. Generate starting point designs to iterate from.",
+  },
+  {
+    title: "Product Managers",
+    description:
+      "Visualize feature ideas for stakeholder presentations. Communicate product vision to engineering teams.",
+  },
+  {
+    title: "Hackathon Builders",
+    description:
+      "Rapidly create polished UI for demo day. Go from idea to demo in hours, not days.",
+  },
+  {
+    title: "Freelancers & Agencies",
+    description:
+      "Generate initial concepts for client presentations. Explore multiple design directions quickly.",
+  },
+];
+
 // ============================================================================
 // Component: Header
 // Clean, minimal navigation
@@ -272,8 +300,8 @@ function HeroSection() {
           animate="visible"
           className="font-serif text-5xl md:text-7xl lg:text-8xl text-[#1A1A1A] tracking-tight leading-[1.05] mb-8 max-w-4xl"
         >
-          AI App Designer —{" "}
-          <span className="text-[#B8956F] italic">mockups in minutes</span>
+          AI App Designer.{" "}
+          <span className="text-[#B8956F] italic">Mockups in minutes.</span>
         </motion.h1>
 
         {/* Subheadline with SEO keywords */}
@@ -395,6 +423,59 @@ function FeaturesSection() {
               </h3>
               <p className="text-[#6B6B6B] leading-relaxed">
                 {feature.description}
+              </p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+// ============================================================================
+// Component: Use Cases Section
+// Who benefits from OpenDesign
+// ============================================================================
+
+function UseCasesSection() {
+  return (
+    <section className="py-24 px-6 bg-[#FAF8F5]" aria-label="Who Uses OpenDesign">
+      <div className="max-w-6xl mx-auto">
+        {/* Section Header */}
+        <motion.div
+          variants={slideUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          className="mb-16"
+        >
+          <h2 className="font-serif text-4xl md:text-5xl text-[#1A1A1A] tracking-tight mb-4">
+            Who Uses OpenDesign
+          </h2>
+          <p className="text-lg text-[#6B6B6B] max-w-xl">
+            From solo founders to agencies, anyone can create professional app mockups
+          </p>
+        </motion.div>
+
+        {/* Use Case Cards - 2 column grid */}
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          className="grid md:grid-cols-2 gap-6"
+        >
+          {useCases.map((useCase, index) => (
+            <motion.div
+              key={index}
+              variants={slideUp}
+              className="bg-white border border-[#E8E4E0] border-l-4 border-l-[#B8956F] rounded-xl p-6 hover:shadow-md transition-all"
+            >
+              <h3 className="font-serif text-xl text-[#1A1A1A] mb-2">
+                {useCase.title}
+              </h3>
+              <p className="text-[#6B6B6B] leading-relaxed">
+                {useCase.description}
               </p>
             </motion.div>
           ))}
@@ -546,6 +627,7 @@ export default function LandingPage() {
       <main>
         <HeroSection />
         <FeaturesSection />
+        <UseCasesSection />
         <CTASection />
       </main>
       <Footer />
