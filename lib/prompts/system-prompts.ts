@@ -51,18 +51,34 @@ const HTML_CSS_RULES = `HTML/CSS RULES:
 - NO React, NO JavaScript, NO event handlers - pure static HTML
 - Include realistic placeholder content (names, dates, numbers, descriptions)`;
 
-const IMAGE_RULES = `IMAGES - CRITICAL:
-Use our image API for ALL images - it can find anything (Pokemon, cars, food, people, logos, etc.):
-- URL format: https://www.opendesign.build/api/image?q=KEYWORDS&w=WIDTH&h=HEIGHT
-- Use descriptive keywords separated by commas for best results
-- Examples:
-  - Pokemon: https://www.opendesign.build/api/image?q=pikachu,pokemon&w=200&h=200
-  - Avatar: https://www.opendesign.build/api/image?q=professional,headshot,portrait&w=48&h=48
-  - Food: https://www.opendesign.build/api/image?q=sushi,japanese,restaurant&w=400&h=300
-  - Cars: https://www.opendesign.build/api/image?q=tesla,model-s,electric-car&w=400&h=300
-  - Fitness: https://www.opendesign.build/api/image?q=gym,workout,fitness&w=600&h=400
+const IMAGE_RULES = `IMAGES - USE REAL WORKING URLs:
+You MUST use real, working image URLs. Here are reliable sources:
 
-NEVER use placeholder.com, unsplash.com, picsum.photos, or broken/made-up URLs.`;
+1. **Pokemon/Game Characters** - Use PokeAPI sprites (ALWAYS use these for Pokemon):
+   - https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png (Pikachu)
+   - https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png (Bulbasaur)
+   - https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/4.png (Charmander)
+   - https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/7.png (Squirtle)
+   - https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/6.png (Charizard)
+   - https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/9.png (Blastoise)
+   - Pokemon numbers: Bulbasaur=1, Charmander=4, Squirtle=7, Pikachu=25, etc.
+
+2. **Profile Avatars** - Use UI Avatars:
+   - https://ui-avatars.com/api/?name=John+Doe&size=48&background=random
+   - https://ui-avatars.com/api/?name=Sarah+Smith&size=64&background=6366f1&color=fff
+
+3. **General Photos** - Use Picsum with descriptive seeds:
+   - https://picsum.photos/seed/cooking/400/300 (food-related)
+   - https://picsum.photos/seed/fitness/400/300 (fitness-related)
+   - https://picsum.photos/seed/nature/400/300 (nature)
+   - https://picsum.photos/seed/office/400/300 (business)
+   - https://picsum.photos/seed/travel/400/300 (travel)
+
+4. **Colored Placeholders** - Use Placehold.co:
+   - https://placehold.co/400x300/orange/white?text=Recipe
+   - https://placehold.co/200x200/3b82f6/white?text=Product
+
+NEVER use made-up URLs or domains that don't exist.`;
 
 const ICON_RULES = `ICONS - Use inline SVG:
 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="..."></path></svg>
@@ -115,11 +131,12 @@ const MOBILE_EXAMPLE = `EXAMPLE OUTPUT (notice the order - name and icon FIRST):
         <p class="text-sm text-orange-600">Good morning</p>
         <h1 class="text-2xl font-bold text-gray-900">What's cooking?</h1>
       </div>
-      <img src="https://www.opendesign.build/api/image?q=chef,cooking,portrait&w=48&h=48" class="w-12 h-12 rounded-full" />
+      <img src="https://ui-avatars.com/api/?name=Chef&size=48&background=f97316&color=fff" class="w-12 h-12 rounded-full" />
     </div>
   </header>
   <main class="px-6">
     <!-- Beautiful card-based content with shadows and images -->
+    <img src="https://picsum.photos/seed/pasta/400/200" class="w-full rounded-xl" />
   </main>
 </div>
 <!-- SCREEN_END -->
