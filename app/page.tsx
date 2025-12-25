@@ -17,7 +17,7 @@
  * - No gradients, glows, or decorative effects
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -34,6 +34,11 @@ import {
   Crown,
   Zap,
   MessageSquare,
+  Dumbbell,
+  ChefHat,
+  Plane,
+  Music,
+  LucideIcon,
 } from "lucide-react";
 import { PLANS, MESSAGE_PACK } from "@/lib/constants/plans";
 import { usePendingPrompt } from "@/lib/hooks/usePendingPrompt";
@@ -101,11 +106,63 @@ const features = [
   },
 ];
 
-const examplePrompts = [
-  "A minimalist task manager",
-  "Analytics dashboard",
-  "E-commerce checkout flow",
-  "Podcast app with dark mode",
+// ============================================================================
+// Example Prompts with Rich Data
+// ============================================================================
+
+interface ExamplePrompt {
+  label: string;
+  styleTag: string;
+  description: string;
+  icon: LucideIcon;
+  fullPrompt: string;
+}
+
+const examplePrompts: ExamplePrompt[] = [
+  {
+    label: "Fitness Tracker",
+    styleTag: "Warm Gradients",
+    description: "Activity rings, workout cards, progress charts",
+    icon: Dumbbell,
+    fullPrompt: `Personal fitness dashboard. Daily activity rings showing steps, calories burned, and active minutes. Workout history displayed as cards with exercise type icons, duration, and intensity level. Weekly progress line chart with smooth curves. Achievement badges collection and current streak counter with flame icon.
+
+Also create the workout detail screen and profile screen.
+
+Mobile UI, warm gradient aesthetic. Soft coral (#FF8A80) and peach gradients transitioning to warm orange. Large rounded progress indicators with satisfying fill animations. Friendly rounded sans-serif typography. Organic blob shapes in background, motivational quotes section.`,
+  },
+  {
+    label: "Recipe Collection",
+    styleTag: "Editorial",
+    description: "Ingredient cards, cooking mode, favorites",
+    icon: ChefHat,
+    fullPrompt: `Recipe collection app. Featured recipe hero section with beautiful food photography placeholder and cooking time badge. Ingredient list as horizontal scrolling cards with quantity badges and tap-to-check functionality. Step-by-step cooking mode with large readable text, timer widget, and progress indicator. Favorites collection organized in category tabs.
+
+Also create the cooking mode screen and shopping list screen.
+
+Mobile UI, editorial magazine aesthetic. Warm cream (#FFF8F0) and terracotta (#C17C60) palette. Elegant serif typography for headings, clean sans-serif for body. Card layouts with generous whitespace and subtle shadows. Sophisticated food photography placeholders with rounded corners.`,
+  },
+  {
+    label: "Travel Planner",
+    styleTag: "Wanderlust",
+    description: "Trip cards, itinerary timeline, packing lists",
+    icon: Plane,
+    fullPrompt: `Trip planning app. Upcoming trips as cards with destination cover photos, countdown timer, and date range. Day-by-day itinerary displayed as vertical timeline with location pins, time slots, and activity icons. Packing checklist with categorized expandable sections. Budget tracker showing expense breakdown in a donut chart with category colors.
+
+Also create the day detail screen and expense logging screen.
+
+Mobile UI, vibrant wanderlust aesthetic. Ocean teal (#0097A7) and sunset coral (#FF7043) as primary colors. Polaroid-style photo frames with slight rotation. Handwritten accent font for headings. Map markers, dotted path lines connecting destinations, adventure-themed iconography.`,
+  },
+  {
+    label: "Music Player",
+    styleTag: "Dark Neon",
+    description: "Now playing, visualizer, playlist grid",
+    icon: Music,
+    fullPrompt: `Music streaming app. Now playing screen featuring large album artwork with reflection effect, playback controls with scrubber, and like/shuffle/repeat buttons. Audio waveform visualizer bars animating with the beat. Up next queue as draggable list items. Playlist library displayed as a masonry grid of album art cards.
+
+Also create the library browse screen and search screen.
+
+Mobile UI, dark mode with neon accents. Deep charcoal (#1A1A2E) background with electric purple (#9D4EDD) and hot pink (#FF006E) gradient accents. Glassmorphic player controls with blur backdrop. Subtle glow effects on active elements. Bold geometric sans-serif typography with high contrast.`,
+  },
 ];
 
 const useCases = [
@@ -278,13 +335,75 @@ function Header() {
 
 function HeroSection() {
   const [prompt, setPrompt] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
   const router = useRouter();
   const { isSignedIn } = useUser();
   const { savePendingPrompt } = usePendingPrompt();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const streamingRef = useRef<{ cancelled: boolean }>({ cancelled: false });
+
+  // Stream text character by character - fast, ~1 second total
+  const streamText = useCallback(async (text: string) => {
+    streamingRef.current.cancelled = false;
+    setIsStreaming(true);
+    setPrompt("");
+
+    const startTime = Date.now();
+    const targetDuration = 1500; // 1.5 seconds total
+
+    for (let i = 0; i < text.length; i++) {
+      if (streamingRef.current.cancelled) {
+        break;
+      }
+
+      setPrompt(text.slice(0, i + 1));
+
+      // Calculate how long we should have taken vs how long we actually took
+      const expectedTime = ((i + 1) / text.length) * targetDuration;
+      const elapsed = Date.now() - startTime;
+      const delay = Math.max(0, expectedTime - elapsed);
+
+      if (delay > 0) {
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+
+    setIsStreaming(false);
+  }, []);
+
+  // Handle clicking an example card
+  const handleExampleClick = useCallback(
+    (example: ExamplePrompt) => {
+      // Cancel any ongoing streaming
+      streamingRef.current.cancelled = true;
+
+      // Focus textarea and start streaming
+      textareaRef.current?.focus();
+      streamText(example.fullPrompt);
+    },
+    [streamText]
+  );
+
+  // Handle user typing - cancels streaming
+  const handlePromptChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      if (isStreaming) {
+        // User started typing, cancel streaming
+        streamingRef.current.cancelled = true;
+        setIsStreaming(false);
+      }
+      setPrompt(e.target.value);
+    },
+    [isStreaming]
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim()) return;
+
+    // Cancel any streaming
+    streamingRef.current.cancelled = true;
+    setIsStreaming(false);
 
     // Save prompt to localStorage for use after auth
     savePendingPrompt(prompt.trim(), "mobile");
@@ -356,19 +475,21 @@ function HeroSection() {
         >
           <div className="bg-white border border-[#E8E4E0] rounded-2xl p-2 shadow-sm">
             <textarea
+              ref={textareaRef}
               value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
+              onChange={handlePromptChange}
               placeholder="I want to design an app that..."
-              rows={3}
+              rows={4}
               className="w-full bg-transparent text-[#1A1A1A] placeholder-[#9A9A9A] text-lg px-4 py-3 resize-none focus:outline-none"
             />
             <div className="flex items-center justify-between px-2 pb-1">
               <span className="text-xs text-[#9A9A9A]">
-                Press Enter or click to generate
+                {isStreaming ? "Typing..." : "Press Enter or click to generate"}
               </span>
               <button
                 type="submit"
-                className="flex items-center gap-2 bg-[#B8956F] text-white font-medium px-5 py-2.5 rounded-xl hover:bg-[#A6845F] transition-colors"
+                disabled={isStreaming}
+                className="flex items-center gap-2 bg-[#B8956F] text-white font-medium px-5 py-2.5 rounded-xl hover:bg-[#A6845F] transition-colors disabled:opacity-50"
               >
                 Design it
                 <ArrowRight className="w-4 h-4" />
@@ -377,24 +498,47 @@ function HeroSection() {
           </div>
         </motion.form>
 
-        {/* Example Prompts */}
+        {/* Inspiration Cards */}
         <motion.div
           variants={staggerContainer}
           initial="hidden"
           animate="visible"
         >
-          <p className="text-sm text-[#9A9A9A] mb-3">Try an example:</p>
-          <div className="flex flex-wrap gap-2">
-            {examplePrompts.map((example, index) => (
-              <motion.button
-                key={index}
-                variants={fadeIn}
-                onClick={() => setPrompt(example)}
-                className="text-sm text-[#6B6B6B] hover:text-[#1A1A1A] bg-white border border-[#E8E4E0] hover:border-[#D4CFC9] px-4 py-2 rounded-full transition-all"
-              >
-                {example}
-              </motion.button>
-            ))}
+          <p className="text-sm text-[#9A9A9A] mb-4 flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-[#B8956F]" />
+            Need inspiration?
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {examplePrompts.map((example) => {
+              const IconComponent = example.icon;
+              return (
+                <motion.button
+                  key={example.label}
+                  variants={fadeIn}
+                  onClick={() => handleExampleClick(example)}
+                  className="text-left bg-white border border-[#E8E4E0] rounded-xl p-4 hover:border-[#B8956F] hover:shadow-md transition-all group"
+                >
+                  {/* Icon and Title Row */}
+                  <div className="flex items-start gap-3 mb-2">
+                    <div className="w-10 h-10 rounded-lg bg-[#FAF8F5] border border-[#E8E4E0] flex items-center justify-center flex-shrink-0 group-hover:bg-[#FFF8F0] group-hover:border-[#F5E6D3] transition-colors">
+                      <IconComponent className="w-5 h-5 text-[#B8956F]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-[#1A1A1A] text-sm">
+                        {example.label}
+                      </h3>
+                      <span className="inline-block text-[10px] bg-[#F5F2EF] text-[#6B6B6B] px-2 py-0.5 rounded-full mt-1">
+                        {example.styleTag}
+                      </span>
+                    </div>
+                  </div>
+                  {/* Description */}
+                  <p className="text-xs text-[#6B6B6B] line-clamp-2">
+                    {example.description}
+                  </p>
+                </motion.button>
+              );
+            })}
           </div>
         </motion.div>
       </div>
