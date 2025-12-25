@@ -7,6 +7,10 @@ interface SegmentOption<T extends string> {
   value: T;
   label: string;
   icon?: ReactNode;
+  /** Optional badge to show (e.g., "Active" indicator) */
+  badge?: ReactNode;
+  /** Whether this option should show an "active mode" indicator dot */
+  isActiveMode?: boolean;
 }
 
 interface SegmentedControlProps<T extends string> {
@@ -40,6 +44,12 @@ export function SegmentedControl<T extends string>({
           <span className="relative z-10 flex items-center gap-2">
             {option.icon}
             {option.label}
+            {/* Active mode indicator dot */}
+            {option.isActiveMode && (
+              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+            )}
+            {/* Optional custom badge */}
+            {option.badge}
           </span>
         </button>
       ))}

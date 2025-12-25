@@ -3,159 +3,109 @@
 /**
  * Quota Exceeded Banner
  *
- * A reusable inline banner that shows when the user has no messages remaining.
- * Provides two options:
- * 1. Upgrade to Pro (or purchase more messages)
- * 2. Use your own API key (BYOK)
- *
- * This component replaces the chat input when quota is exhausted.
+ * A refined inline banner that shows when the user has no messages remaining.
+ * - Compact mode: Simple text link for chat interface
+ * - Full mode: Detailed cards with pricing info for home page
  */
 
-import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { AlertCircle, Crown, Key, ArrowRight, Zap } from "lucide-react";
+import { Crown, Key, Sparkles, Infinity } from "lucide-react";
 import { useSubscription } from "@/lib/hooks/useSubscription";
-import { UpgradeModal } from "./UpgradeModal";
+import { PLANS, MESSAGE_PACK } from "@/lib/constants/plans";
 
 interface QuotaExceededBannerProps {
-  /** Custom message to show (optional) */
-  message?: string;
-  /** Whether to show in compact mode */
   compact?: boolean;
 }
 
-export function QuotaExceededBanner({
-  message,
-  compact = false,
-}: QuotaExceededBannerProps) {
-  const { plan, messagesRemaining, messagesLimit } = useSubscription();
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [isUpgrading, setIsUpgrading] = useState(false);
-  const { upgradeToProUrl, purchaseMessagesUrl } = useSubscription();
-
-  const handleUpgrade = async () => {
-    setIsUpgrading(true);
-    const url = plan === "pro" ? await purchaseMessagesUrl() : await upgradeToProUrl();
-    if (url) {
-      window.location.href = url;
-    }
-    setIsUpgrading(false);
-  };
-
-  const defaultMessage =
-    plan === "free"
-      ? "You've used all your free messages this month"
-      : "You've used all your messages this month";
+export function QuotaExceededBanner({ compact = false }: QuotaExceededBannerProps) {
+  const { plan } = useSubscription();
 
   if (compact) {
     return (
-      <>
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-2 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl"
-        >
-          <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
-          <p className="text-sm text-amber-800 flex-1">
-            {message || defaultMessage}
-          </p>
-          <button
-            onClick={() => setShowUpgradeModal(true)}
-            className="text-sm font-medium text-amber-700 hover:text-amber-900 underline underline-offset-2"
-          >
-            Options
-          </button>
-        </motion.div>
-
-        <UpgradeModal
-          isOpen={showUpgradeModal}
-          onClose={() => setShowUpgradeModal(false)}
-          reason="quota_exceeded"
-        />
-      </>
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center py-3"
+      >
+        <p className="text-sm text-[#6B6459]">
+          No messages remaining •{" "}
+          <Link href="/home/settings" className="text-[#B8956F] hover:underline font-medium">
+            Get more
+          </Link>
+        </p>
+      </motion.div>
     );
   }
 
+  // Full version with more details for home page
   return (
-    <>
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-6"
-      >
-        {/* Header */}
-        <div className="flex items-start gap-3 mb-5">
-          <div className="p-2 bg-amber-100 rounded-xl">
-            <AlertCircle className="w-5 h-5 text-amber-600" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-[#3D3A35] text-base">
-              {message || defaultMessage}
-            </h3>
-            <p className="text-sm text-[#6B6459] mt-0.5">
-              {messagesRemaining}/{messagesLimit} messages remaining
-            </p>
-          </div>
-        </div>
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-4"
+    >
+      {/* Header */}
+      <div className="text-center">
+        <p className="text-sm text-[#6B6459]">
+          You&apos;ve used all your messages this month
+        </p>
+      </div>
 
-        {/* Options */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {/* Upgrade Option */}
-          <motion.button
+      {/* Options */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {/* Upgrade / Buy Messages Option */}
+        <Link href="/home/settings">
+          <motion.div
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={handleUpgrade}
-            disabled={isUpgrading}
-            className="flex items-center gap-3 p-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 rounded-xl text-white text-left transition-colors disabled:opacity-50"
+            className="p-4 bg-gradient-to-br from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 rounded-xl text-white transition-all shadow-sm cursor-pointer"
           >
-            <div className="p-2 bg-white/20 rounded-lg">
-              {plan === "pro" ? (
-                <Zap className="w-4 h-4" />
-              ) : (
-                <Crown className="w-4 h-4" />
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <Crown className="w-4 h-4" />
+              <span className="font-semibold">
                 {plan === "pro" ? "Buy More Messages" : "Upgrade to Pro"}
-              </p>
-              <p className="text-xs text-white/80">
-                {plan === "pro" ? "+20 messages for $5" : "50 messages/month for $15"}
-              </p>
+              </span>
             </div>
-            <ArrowRight className="w-4 h-4 flex-shrink-0" />
-          </motion.button>
-
-          {/* BYOK Option */}
-          <Link href="/home/settings">
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="flex items-center gap-3 p-4 bg-white hover:bg-[#F5F2EF] border border-[#E8E4DF] rounded-xl text-left transition-colors h-full"
-            >
-              <div className="p-2 bg-[#F5F2EF] rounded-lg">
-                <Key className="w-4 h-4 text-[#6B6459]" />
+            <p className="text-xs text-white/80">
+              {plan === "pro" ? (
+                <>${MESSAGE_PACK.priceUsd} for {MESSAGE_PACK.messages} messages</>
+              ) : (
+                <>
+                  ${PLANS.pro.price}/month • {PLANS.pro.messagesPerMonth} messages
+                </>
+              )}
+            </p>
+            {plan !== "pro" && (
+              <div className="flex items-center gap-1 mt-2 text-xs text-white/70">
+                <Sparkles className="w-3 h-3" />
+                <span>Access all AI models</span>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm text-[#3D3A35]">
-                  Use Your Own API Key
-                </p>
-                <p className="text-xs text-[#6B6459]">
-                  Free with your OpenRouter or Gemini key
-                </p>
-              </div>
-              <ArrowRight className="w-4 h-4 text-[#9C9589] flex-shrink-0" />
-            </motion.div>
-          </Link>
-        </div>
-      </motion.div>
+            )}
+          </motion.div>
+        </Link>
 
-      <UpgradeModal
-        isOpen={showUpgradeModal}
-        onClose={() => setShowUpgradeModal(false)}
-        reason="quota_exceeded"
-      />
-    </>
+        {/* API Key Option */}
+        <Link href="/home/settings">
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="p-4 bg-[#F5F2EF] hover:bg-[#EBE8E3] border border-[#E8E4E0] rounded-xl transition-colors cursor-pointer"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <Key className="w-4 h-4 text-[#1A1A1A]" />
+              <span className="font-semibold text-[#1A1A1A]">Use Your Own API Key</span>
+            </div>
+            <p className="text-xs text-[#6B6459]">
+              Connect OpenRouter or Gemini API
+            </p>
+            <div className="flex items-center gap-1 mt-2 text-xs text-[#6B6459]">
+              <Infinity className="w-3 h-3" />
+              <span>Unlimited messages, all models</span>
+            </div>
+          </motion.div>
+        </Link>
+      </div>
+    </motion.div>
   );
 }

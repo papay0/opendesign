@@ -22,7 +22,7 @@
 
 import { streamText } from "ai";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
-import { createGoogleGenerativeAI, google as googleProvider } from "@ai-sdk/google";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { SYSTEM_PROMPTS, type Platform } from "@/lib/prompts/system-prompts";
 import { auth } from "@clerk/nextjs/server";
 import { createClient } from "@supabase/supabase-js";
@@ -208,23 +208,19 @@ IMPORTANT:
 
     // Create the appropriate model based on provider
     let model;
-    let useGoogleSearch = false;
 
     if (provider === "gemini") {
-      // Direct Google Gemini API - can use Google Search grounding
+      // Direct Google Gemini API
       const google = createGoogleGenerativeAI({
         apiKey: apiKey,
       });
       model = google(selectedModel);
-      useGoogleSearch = true;
-      console.log("[Design Stream] Google Search grounding enabled (direct Gemini API)");
     } else {
-      // OpenRouter (default) - cannot use Google Search grounding
+      // OpenRouter (default)
       const openrouter = createOpenRouter({
         apiKey: apiKey,
       });
       model = openrouter.chat(`google/${selectedModel}`);
-      console.log("[Design Stream] Google Search grounding not available (OpenRouter)");
     }
 
     // Build messages array with support for multimodal content
@@ -282,17 +278,11 @@ IMPORTANT:
 
         try {
           // Use the AI SDK streaming with platform-specific prompt
-          // Add Google Search grounding when using direct Gemini API
           const result = streamText({
             model,
             system: systemPrompt,
             messages,
             temperature: 0.7,
-            ...(useGoogleSearch && {
-              tools: {
-                google_search: googleProvider.tools.googleSearch({}),
-              },
-            }),
           });
 
           // Stream the text response

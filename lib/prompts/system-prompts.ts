@@ -52,36 +52,28 @@ const HTML_CSS_RULES = `HTML/CSS RULES:
 - Include realistic placeholder content (names, dates, numbers, descriptions)`;
 
 const IMAGE_RULES = `IMAGES - USE REAL WORKING URLs:
-You have access to Google Search! Use it to find REAL image URLs for specific people, athletes, celebrities, logos, etc.
+You MUST use real, working image URLs from your knowledge. Use URLs you KNOW exist from your training data.
 
-**For specific people/athletes/celebrities/brands:**
-Use Google Search to find their official photos! Search for "[name] official photo" or "[name] headshot" and use the real image URLs you find.
-Examples: NBA players, NFL players, celebrities, company logos, movie posters, etc.
+**For Pokemon** - Use PokeAPI sprites (ALWAYS use these):
+   - https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/{number}.png
+   - Examples: 1=Bulbasaur, 4=Charmander, 7=Squirtle, 25=Pikachu, 6=Charizard, 9=Blastoise, 150=Mewtwo
 
-**For Pokemon/Game Characters** - Use PokeAPI sprites (ALWAYS use these for Pokemon):
-   - https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png (Pikachu)
-   - https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png (Bulbasaur)
-   - https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/4.png (Charmander)
-   - https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/7.png (Squirtle)
-   - https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/6.png (Charizard)
-   - https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/9.png (Blastoise)
-   - Pokemon numbers: Bulbasaur=1, Charmander=4, Squirtle=7, Pikachu=25, etc.
+**For NBA/Sports** - Use official NBA CDN URLs you know:
+   - NBA headshots: https://cdn.nba.com/headshots/nba/latest/1040x760/{player_id}.png
+   - Example player IDs: 2544=LeBron James, 201566=Stephen Curry, 203507=Giannis
+   - Team logos: https://cdn.nba.com/logos/nba/{team_id}/global/L/logo.svg
 
 **For Profile Avatars** - Use UI Avatars:
    - https://ui-avatars.com/api/?name=John+Doe&size=48&background=random
-   - https://ui-avatars.com/api/?name=Sarah+Smith&size=64&background=6366f1&color=fff
 
 **For General Photos** - Use Picsum with descriptive seeds:
-   - https://picsum.photos/seed/cooking/400/300 (food-related)
-   - https://picsum.photos/seed/fitness/400/300 (fitness-related)
-   - https://picsum.photos/seed/nature/400/300 (nature)
-   - https://picsum.photos/seed/office/400/300 (business)
-   - https://picsum.photos/seed/travel/400/300 (travel)
+   - https://picsum.photos/seed/{descriptive-word}/400/300
+   - Examples: cooking, fitness, nature, office, travel, food, basketball, sports
 
 **For Colored Placeholders** - Use Placehold.co:
-   - https://placehold.co/400x300/orange/white?text=Recipe
-   - https://placehold.co/200x200/3b82f6/white?text=Product
+   - https://placehold.co/400x300/{hex-color}/white?text={Label}
 
+CRITICAL: Only use URLs you are CONFIDENT exist. If unsure, use UI Avatars or Picsum as fallback.
 NEVER use made-up URLs or domains that don't exist.`;
 
 const ICON_RULES = `ICONS - Use inline SVG:

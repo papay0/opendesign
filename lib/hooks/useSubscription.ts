@@ -67,13 +67,14 @@ export function useSubscription(): UseSubscriptionReturn {
       }
 
       // Get subscription details if exists
+      // Use maybeSingle() instead of single() to handle users without a subscription row
       let subscription: Subscription | null = null;
       if (user) {
         const { data: subData } = await supabase
           .from("subscriptions")
           .select("*")
           .eq("user_id", user.id)
-          .single();
+          .maybeSingle();
 
         subscription = subData;
       }

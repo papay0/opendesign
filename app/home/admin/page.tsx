@@ -38,6 +38,7 @@ import { formatCost, formatTokens } from "@/lib/constants/pricing";
 import type { UsageLog } from "@/lib/supabase/types";
 import { CostEstimator } from "./components/CostEstimator";
 import { ScenarioPlanning } from "./components/ScenarioPlanning";
+import { UserManagement } from "./components/UserManagement";
 
 // ============================================================================
 // Types
@@ -610,6 +611,11 @@ export default function AdminDashboard() {
           </div>
         </div>
       </motion.div>
+
+      {/* User Management Section */}
+      <div className="mb-8">
+        <UserManagement />
+      </div>
 
       {/* Main Metrics Grid */}
       <motion.div

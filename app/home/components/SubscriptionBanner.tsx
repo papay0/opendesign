@@ -2,15 +2,23 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Zap, Crown, AlertCircle } from "lucide-react";
+import { Zap, Crown, AlertCircle, Key, Infinity } from "lucide-react";
 import { useSubscription } from "@/lib/hooks/useSubscription";
 import { PLANS } from "@/lib/constants/plans";
 
 interface SubscriptionBannerProps {
   onUpgradeClick?: () => void;
+  /** When true, shows "Unlimited" badge instead of message counter and hides upgrade button */
+  isBYOKActive?: boolean;
+  /** The BYOK provider name (for display) */
+  byokProvider?: "openrouter" | "gemini" | null;
 }
 
-export function SubscriptionBanner({ onUpgradeClick }: SubscriptionBannerProps) {
+export function SubscriptionBanner({
+  onUpgradeClick,
+  isBYOKActive = false,
+  byokProvider = null,
+}: SubscriptionBannerProps) {
   const {
     plan,
     messagesRemaining,
@@ -43,6 +51,29 @@ export function SubscriptionBanner({ onUpgradeClick }: SubscriptionBannerProps) 
   const isLow = messagesRemaining <= Math.ceil(messagesLimit * 0.2);
   const isOut = messagesRemaining <= 0;
   const planConfig = PLANS[plan];
+
+  // BYOK users get a simplified display with "Unlimited" badge
+  if (isBYOKActive) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center gap-2"
+      >
+        {/* BYOK Badge */}
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+          <Key className="w-3 h-3" />
+          <span>{byokProvider === "gemini" ? "Gemini" : "OpenRouter"}</span>
+        </div>
+
+        {/* Unlimited Badge */}
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+          <Infinity className="w-3 h-3" />
+          <span>Unlimited</span>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -82,7 +113,7 @@ export function SubscriptionBanner({ onUpgradeClick }: SubscriptionBannerProps) 
         </span>
       </div>
 
-      {/* Upgrade Button (for free users) */}
+      {/* Upgrade Button (for free users only, not for BYOK) */}
       {plan === "free" && (
         <motion.button
           whileHover={{ scale: 1.02 }}

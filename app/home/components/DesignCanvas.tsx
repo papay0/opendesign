@@ -474,22 +474,6 @@ export function DesignCanvas({
 
   return (
     <div className="flex-1 flex flex-col bg-[#F0EDE8] overflow-hidden">
-      {/* Canvas Toolbar - hidden on mobile */}
-      {!isMobileView && (
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#E8E4E0] bg-white/50">
-          <div className="flex items-center gap-2">
-            <PlatformIcon className="w-4 h-4 text-[#9A9A9A]" />
-            <span className="text-sm text-[#6B6B6B]">
-              {completedScreens.length} screen{completedScreens.length !== 1 ? "s" : ""}
-              {isStreaming && currentScreenName && " (streaming...)"}
-            </span>
-          </div>
-          <div className="flex items-center gap-1 text-sm text-[#9A9A9A]">
-            <span>Two-finger drag to pan, pinch to zoom</span>
-          </div>
-        </div>
-      )}
-
       {/* Canvas Content */}
       <div className="flex-1 overflow-hidden relative">
         {!hasScreens ? (

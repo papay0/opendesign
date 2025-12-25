@@ -29,6 +29,7 @@ import {
   Trash2,
   Smartphone,
   Monitor,
+  Infinity,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { Project } from "@/lib/supabase/types";
@@ -40,7 +41,14 @@ import { ModelSelector, getSelectedModel, type ModelId } from "./components/Mode
 import type { PlanType } from "@/lib/constants/plans";
 import { useUserSync } from "@/lib/hooks/useUserSync";
 import { useSubscription } from "@/lib/hooks/useSubscription";
+import { useBYOK } from "@/lib/hooks/useBYOK";
 import { QuotaExceededBanner } from "./components/QuotaExceededBanner";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { Platform } from "@/lib/constants/platforms";
 import {
   validateImage,
@@ -68,22 +76,7 @@ const staggerContainer = {
   },
 };
 
-// ============================================================================
-// Helper: Check if API key is configured
-// ============================================================================
-
-function getStoredApiKey(): { key: string; provider: string } | null {
-  if (typeof window === "undefined") return null;
-
-  const stored = localStorage.getItem("opendesign_api_config");
-  if (!stored) return null;
-
-  try {
-    return JSON.parse(stored);
-  } catch {
-    return null;
-  }
-}
+// API key configuration is now handled by useBYOK hook
 
 
 // ============================================================================
@@ -229,12 +222,14 @@ function PromptInput({
   userId,
   isAdmin,
   userPlan,
+  isBYOKActive,
 }: {
   onSubmit: (prompt: string, platform: Platform, imageUrl: string | null, model: ModelId) => Promise<void>;
   isLoading: boolean;
   userId: string;
   isAdmin: boolean;
   userPlan: PlanType;
+  isBYOKActive: boolean;
 }) {
   const [prompt, setPrompt] = useState("");
   const [platform, setPlatform] = useState<Platform>("mobile");
@@ -415,7 +410,27 @@ function PromptInput({
                     onChange={setSelectedModelState}
                     compact
                     userPlan={userPlan}
+                    isBYOKActive={isBYOKActive}
                   />
+                </>
+              )}
+              {/* BYOK indicator - compact infinity badge */}
+              {isBYOKActive && (
+                <>
+                  <div className="w-px h-5 bg-[#E8E4E0]" />
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-[#F5EFE7] text-[#B8956F] cursor-help">
+                          <Infinity className="w-4 h-4" />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Unlimited generations</p>
+                        <p className="text-[10px] opacity-70">Using your own API key</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </>
               )}
             </div>
@@ -461,26 +476,20 @@ export default function DashboardPage() {
   const { dbUser } = useUserSync();
   const isAdmin = dbUser?.role === "admin";
   const { messagesRemaining, isLoading: isSubscriptionLoading } = useSubscription();
+  const { isBYOKActive } = useBYOK();
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [hasApiKey, setHasApiKey] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
-
-  // Check for API key on mount
-  useEffect(() => {
-    const apiConfig = getStoredApiKey();
-    setHasApiKey(!!apiConfig?.key);
-  }, []);
 
   // Determine if quota is exceeded (no BYOK and no messages remaining)
   // Wait for subscription to load before determining - if no API key, we need accurate quota info
-  const isQuotaExceeded = !hasApiKey && !isSubscriptionLoading && messagesRemaining <= 0;
+  const isQuotaExceeded = !isBYOKActive && !isSubscriptionLoading && messagesRemaining <= 0;
   // User can generate if: has API key OR (subscription loaded AND has messages remaining)
   // If no API key and subscription is loading, don't assume they can generate
-  const userCanGenerate = hasApiKey || (!isSubscriptionLoading && messagesRemaining > 0);
+  const userCanGenerate = isBYOKActive || (!isSubscriptionLoading && messagesRemaining > 0);
   // Show loading state while waiting for subscription (only if no API key)
-  const isCheckingQuota = !hasApiKey && isSubscriptionLoading;
+  const isCheckingQuota = !isBYOKActive && isSubscriptionLoading;
 
   // Fetch projects on mount
   useEffect(() => {
@@ -613,8 +622,8 @@ export default function DashboardPage() {
       {/* Prompt Input (show if user can generate) */}
       {userCanGenerate && user && (
         <>
-          {/* Messages remaining indicator - only show for users without API key */}
-          {!hasApiKey && !isSubscriptionLoading && messagesRemaining > 0 && messagesRemaining <= 5 && (
+          {/* Messages remaining indicator - only show for users without API key (subscription mode) */}
+          {!isBYOKActive && !isSubscriptionLoading && messagesRemaining > 0 && messagesRemaining <= 5 && (
             <motion.div
               variants={fadeInUp}
               initial="hidden"
@@ -633,6 +642,7 @@ export default function DashboardPage() {
             userId={user.id}
             isAdmin={isAdmin}
             userPlan={(dbUser?.plan as PlanType) || "free"}
+            isBYOKActive={isBYOKActive}
           />
         </>
       )}

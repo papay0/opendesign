@@ -82,6 +82,8 @@ interface ModelSelectorProps {
   onChange: (model: ModelId) => void;
   compact?: boolean;
   userPlan?: PlanType;
+  /** When true, all models are unlocked (BYOK users pay their own API costs) */
+  isBYOKActive?: boolean;
   onUpgradeClick?: () => void;
 }
 
@@ -90,6 +92,7 @@ export function ModelSelector({
   onChange,
   compact = false,
   userPlan = "free",
+  isBYOKActive = false,
   onUpgradeClick,
 }: ModelSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -113,8 +116,9 @@ export function ModelSelector({
   }, [isOpen]);
 
   const handleSelect = (modelId: ModelId) => {
-    // Check if user can use this model
-    if (!isModelAllowedForPlan(modelId, userPlan)) {
+    // BYOK users can use any model - they pay their own API costs
+    // Only check restrictions for non-BYOK users
+    if (!isBYOKActive && !isModelAllowedForPlan(modelId, userPlan)) {
       // Trigger upgrade modal instead
       if (onUpgradeClick) {
         onUpgradeClick();
@@ -160,7 +164,8 @@ export function ModelSelector({
               {AVAILABLE_MODELS.map((model) => {
                 const ModelIcon = model.icon;
                 const isSelected = value === model.id;
-                const isAllowed = isModelAllowedForPlan(model.id, userPlan);
+                // BYOK users have all models unlocked
+                const isAllowed = isBYOKActive || isModelAllowedForPlan(model.id, userPlan);
 
                 return (
                   <button

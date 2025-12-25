@@ -10,7 +10,7 @@
  * Design: Editorial/Magazine aesthetic with warm colors
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Key,
@@ -27,8 +27,11 @@ import {
   Calendar,
   AlertCircle,
   ChevronRight,
+  Infinity,
+  Loader2,
 } from "lucide-react";
 import { useSubscription } from "@/lib/hooks/useSubscription";
+import { useBYOK } from "@/lib/hooks/useBYOK";
 import { PLANS, MESSAGE_PACK } from "@/lib/constants/plans";
 import { SegmentedControl } from "@/app/home/components/SegmentedControl";
 
@@ -71,10 +74,8 @@ const PROVIDERS = [
   },
 ];
 
-const SECTION_OPTIONS = [
-  { value: "subscription" as SettingsSection, label: "Subscription", icon: <Crown className="w-4 h-4" /> },
-  { value: "api-keys" as SettingsSection, label: "API Keys", icon: <Key className="w-4 h-4" /> },
-];
+// Section options are now built dynamically in the component
+// to include isActiveMode based on BYOK state
 
 // ============================================================================
 // Animation Variants
@@ -105,10 +106,14 @@ function getStoredConfig(): ApiConfig | null {
 
 function saveConfig(config: ApiConfig) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+  // Dispatch event so useBYOK hook updates reactively
+  window.dispatchEvent(new CustomEvent("byok-config-changed"));
 }
 
 function clearConfig() {
   localStorage.removeItem(STORAGE_KEY);
+  // Dispatch event so useBYOK hook updates reactively
+  window.dispatchEvent(new CustomEvent("byok-config-changed"));
 }
 
 // ============================================================================
@@ -245,7 +250,11 @@ function SubscriptionSection() {
                 className={`p-2 rounded-lg transition-colors ${plan === "pro" ? "hover:bg-white/10" : "hover:bg-white"}`}
                 title="Manage subscription"
               >
-                <CreditCard className="w-5 h-5" />
+                {actionLoading === "manage" ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <CreditCard className="w-5 h-5" />
+                )}
               </button>
             )}
           </div>
@@ -305,14 +314,24 @@ function SubscriptionSection() {
           >
             <div className="flex items-center gap-3">
               <div className="p-2 bg-white/20 rounded-lg">
-                <Crown className="w-4 h-4" />
+                {actionLoading === "upgrade" ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Crown className="w-4 h-4" />
+                )}
               </div>
               <div className="text-left">
-                <p className="font-medium">Upgrade to Pro</p>
+                <p className="font-medium">
+                  {actionLoading === "upgrade" ? "Loading..." : "Upgrade to Pro"}
+                </p>
                 <p className="text-xs text-white/80">${PLANS.pro.price}/mo - 50 messages</p>
               </div>
             </div>
-            <ChevronRight className="w-5 h-5" />
+            {actionLoading === "upgrade" ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <ChevronRight className="w-5 h-5" />
+            )}
           </button>
         ) : (
           <button
@@ -322,14 +341,54 @@ function SubscriptionSection() {
           >
             <div className="flex items-center gap-3">
               <div className="p-2 bg-[#F5F2EF] rounded-lg">
-                <Zap className="w-4 h-4 text-[#B8956F]" />
+                {actionLoading === "purchase" ? (
+                  <Loader2 className="w-4 h-4 text-[#B8956F] animate-spin" />
+                ) : (
+                  <Zap className="w-4 h-4 text-[#B8956F]" />
+                )}
               </div>
               <div className="text-left">
-                <p className="font-medium text-[#1A1A1A]">Buy More Messages</p>
+                <p className="font-medium text-[#1A1A1A]">
+                  {actionLoading === "purchase" ? "Loading..." : "Buy More Messages"}
+                </p>
                 <p className="text-xs text-[#6B6459]">+{MESSAGE_PACK.messages} messages for ${MESSAGE_PACK.priceUsd}</p>
               </div>
             </div>
-            <ChevronRight className="w-5 h-5 text-[#9A9A9A]" />
+            {actionLoading === "purchase" ? (
+              <Loader2 className="w-5 h-5 text-[#9A9A9A] animate-spin" />
+            ) : (
+              <ChevronRight className="w-5 h-5 text-[#9A9A9A]" />
+            )}
+          </button>
+        )}
+
+        {/* Manage Subscription button - shows for Pro users */}
+        {plan === "pro" && (
+          <button
+            onClick={() => handleAction("manage")}
+            disabled={actionLoading !== null}
+            className="w-full flex items-center justify-between p-3 border border-[#E8E4DF] hover:bg-[#F5F2EF] rounded-xl transition-colors disabled:opacity-50 mt-3"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-[#F5F2EF] rounded-lg">
+                {actionLoading === "manage" ? (
+                  <Loader2 className="w-4 h-4 text-[#B8956F] animate-spin" />
+                ) : (
+                  <CreditCard className="w-4 h-4 text-[#B8956F]" />
+                )}
+              </div>
+              <div className="text-left">
+                <p className="font-medium text-[#1A1A1A]">
+                  {actionLoading === "manage" ? "Loading..." : "Manage Subscription"}
+                </p>
+                <p className="text-xs text-[#6B6459]">Update payment, cancel, or view invoices</p>
+              </div>
+            </div>
+            {actionLoading === "manage" ? (
+              <Loader2 className="w-5 h-5 text-[#9A9A9A] animate-spin" />
+            ) : (
+              <ChevronRight className="w-5 h-5 text-[#9A9A9A]" />
+            )}
           </button>
         )}
       </div>
@@ -569,11 +628,106 @@ function ApiKeysSection() {
 }
 
 // ============================================================================
+// Component: Mode Status Banner
+// ============================================================================
+
+function ModeStatusBanner({
+  isBYOKActive,
+  provider,
+  plan,
+  messagesRemaining,
+}: {
+  isBYOKActive: boolean;
+  provider: "openrouter" | "gemini" | null;
+  plan: string;
+  messagesRemaining: number;
+}) {
+  if (isBYOKActive) {
+    return (
+      <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-xl mb-6">
+        <div className="p-2 bg-emerald-100 rounded-lg">
+          <Key className="w-5 h-5 text-emerald-600" />
+        </div>
+        <div className="flex-1">
+          <p className="font-medium text-emerald-800">Using Your Own API Key</p>
+          <p className="text-sm text-emerald-600">
+            {provider === "gemini" ? "Google Gemini" : "OpenRouter"} • All models unlocked • Unlimited messages
+          </p>
+        </div>
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+          <Infinity className="w-3 h-3" />
+          <span>Active</span>
+        </div>
+      </div>
+    );
+  }
+
+  const planConfig = PLANS[plan as keyof typeof PLANS] || PLANS.free;
+  const isLow = messagesRemaining <= Math.ceil(planConfig.messagesPerMonth * 0.2);
+  const isOut = messagesRemaining <= 0;
+
+  return (
+    <div className={`flex items-center gap-3 p-4 rounded-xl mb-6 ${
+      isOut
+        ? "bg-red-50 border border-red-200"
+        : isLow
+        ? "bg-amber-50 border border-amber-200"
+        : "bg-[#F5F2EF] border border-[#E8E4E0]"
+    }`}>
+      <div className={`p-2 rounded-lg ${
+        plan === "pro"
+          ? "bg-gradient-to-br from-amber-100 to-orange-100"
+          : "bg-[#E8E4DF]"
+      }`}>
+        {plan === "pro" ? (
+          <Crown className="w-5 h-5 text-amber-600" />
+        ) : (
+          <Zap className="w-5 h-5 text-[#6B6459]" />
+        )}
+      </div>
+      <div className="flex-1">
+        <p className={`font-medium ${isOut ? "text-red-800" : isLow ? "text-amber-800" : "text-[#1A1A1A]"}`}>
+          {planConfig.name} Plan Active
+        </p>
+        <p className={`text-sm ${isOut ? "text-red-600" : isLow ? "text-amber-600" : "text-[#6B6B6B]"}`}>
+          {messagesRemaining} of {planConfig.messagesPerMonth} messages remaining this month
+        </p>
+      </div>
+      <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+        plan === "pro"
+          ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white"
+          : "bg-[#E8E4DF] text-[#6B6459]"
+      }`}>
+        <span>Active</span>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
 // Main Settings Page Component
 // ============================================================================
 
 export default function SettingsPage() {
   const [activeSection, setActiveSection] = useState<SettingsSection>("subscription");
+  const { isBYOKActive, provider } = useBYOK();
+  const { plan, messagesRemaining } = useSubscription();
+
+  // Build section options with active mode indicators
+  const sectionOptions = useMemo(() => [
+    {
+      value: "subscription" as SettingsSection,
+      label: "Subscription",
+      icon: <Crown className="w-4 h-4" />,
+      isActiveMode: !isBYOKActive,
+    },
+    {
+      value: "api-keys" as SettingsSection,
+      label: "API Keys",
+      icon: <Key className="w-4 h-4" />,
+      isActiveMode: isBYOKActive,
+    },
+  ], [isBYOKActive]);
 
   return (
     <div className="max-w-lg mx-auto px-5 py-8">
@@ -585,10 +739,18 @@ export default function SettingsPage() {
         </p>
       </div>
 
+      {/* Mode Status Banner */}
+      <ModeStatusBanner
+        isBYOKActive={isBYOKActive}
+        provider={provider}
+        plan={plan}
+        messagesRemaining={messagesRemaining}
+      />
+
       {/* Segmented Control */}
       <div className="mb-6">
         <SegmentedControl
-          options={SECTION_OPTIONS}
+          options={sectionOptions}
           value={activeSection}
           onChange={setActiveSection}
         />
