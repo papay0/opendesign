@@ -59,6 +59,7 @@ import { calculateCost } from "@/lib/constants/pricing";
 import { useUserSync } from "@/lib/hooks/useUserSync";
 import { useSubscription } from "@/lib/hooks/useSubscription";
 import { useBYOK, getApiConfig } from "@/lib/hooks/useBYOK";
+import { trackEvent } from "@/lib/hooks/useAnalytics";
 import { QuotaExceededBanner } from "../../components/QuotaExceededBanner";
 import {
   Tooltip,
@@ -927,6 +928,13 @@ export default function DesignPage() {
       headers["x-provider"] = apiConfig.provider;
     }
 
+    // Track design generation
+    trackEvent("design_generated", {
+      project_id: projectId,
+      model: selectedModel,
+      is_byok: !!apiConfig?.key,
+    });
+
     // Start streaming with platform, image, and model
     await startStreaming(
       "/api/ai/generate-design",
@@ -1027,6 +1035,7 @@ export default function DesignPage() {
             <ExportMenu
               screens={displayScreens}
               projectName={project?.name || "Untitled"}
+              projectId={projectId}
               platform={project?.platform || "mobile"}
             />
           </div>

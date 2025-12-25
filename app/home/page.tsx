@@ -55,6 +55,7 @@ import {
   validateImage,
   uploadImage,
 } from "@/lib/upload/image-upload";
+import { trackEvent } from "@/lib/hooks/useAnalytics";
 
 // ============================================================================
 // Animation Variants
@@ -565,6 +566,13 @@ export default function DashboardPage() {
         return;
       }
 
+      // Track project creation from landing page
+      trackEvent("project_created", {
+        project_id: data.id,
+        platform: pendingPrompt!.platform || "mobile",
+        source: "landing_page",
+      });
+
       // Navigate to the new project - auto-generation will kick in on the project page
       router.push(`/home/projects/${data.id}`);
     }
@@ -598,6 +606,13 @@ export default function DashboardPage() {
       setIsCreating(false);
       return;
     }
+
+    // Track project creation from dashboard
+    trackEvent("project_created", {
+      project_id: data.id,
+      platform: platform,
+      source: "dashboard",
+    });
 
     // Navigate to the new project
     router.push(`/home/projects/${data.id}`);

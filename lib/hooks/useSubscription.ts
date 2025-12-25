@@ -6,6 +6,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { User, Subscription } from "@/lib/supabase/types";
 import { PLANS, type PlanType } from "@/lib/constants/plans";
 import type { BillingInterval } from "@/lib/stripe";
+import { trackEvent } from "@/lib/hooks/useAnalytics";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -149,6 +150,13 @@ export function useSubscription(): UseSubscriptionReturn {
       }
 
       const { url } = await response.json();
+
+      // Track subscription upgrade initiation
+      trackEvent("subscription_upgraded", {
+        plan: "pro",
+        interval: interval,
+      });
+
       return url;
     } catch (err) {
       console.error("Error creating checkout:", err);

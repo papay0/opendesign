@@ -11,6 +11,7 @@ import {
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import Script from "next/script";
+import { PostHogProvider } from "./providers/PostHogProvider";
 import "./globals.css";
 
 /**
@@ -176,7 +177,9 @@ export default function RootLayout({
         <body
           className={`${playfair.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
         >
-          {children}
+          <PostHogProvider>
+            {children}
+          </PostHogProvider>
           <Analytics />
           <SpeedInsights />
         </body>

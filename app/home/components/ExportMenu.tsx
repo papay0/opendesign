@@ -19,14 +19,16 @@ import {
   combineImagesHorizontally,
   toScreenFilename,
 } from "@/lib/utils/screenshot";
+import { trackEvent } from "@/lib/hooks/useAnalytics";
 
 interface ExportMenuProps {
   screens: ParsedScreen[];
   projectName: string;
+  projectId: string;
   platform: Platform;
 }
 
-export function ExportMenu({ screens, projectName, platform }: ExportMenuProps) {
+export function ExportMenu({ screens, projectName, projectId, platform }: ExportMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [exporting, setExporting] = useState<"zip" | "combined" | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -101,6 +103,13 @@ export function ExportMenu({ screens, projectName, platform }: ExportMenuProps) 
         ];
 
         await downloadAsZip(allFiles, `${safeName}-screens.zip`);
+
+        // Track export
+        trackEvent("design_exported", {
+          project_id: projectId,
+          format: "zip",
+          screen_count: screens.length,
+        });
       }
     } catch (error) {
       console.error("Failed to export ZIP:", error);
@@ -125,6 +134,13 @@ export function ExportMenu({ screens, projectName, platform }: ExportMenuProps) 
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/^-|-$/g, "");
         downloadBlob(combinedBlob, `${safeName}-combined.png`);
+
+        // Track export
+        trackEvent("design_exported", {
+          project_id: projectId,
+          format: "png",
+          screen_count: screens.length,
+        });
       }
     } catch (error) {
       console.error("Failed to export combined image:", error);

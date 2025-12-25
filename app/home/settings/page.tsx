@@ -33,6 +33,7 @@ import { useSubscription } from "@/lib/hooks/useSubscription";
 import { useBYOK } from "@/lib/hooks/useBYOK";
 import { PLANS, MESSAGE_PACK } from "@/lib/constants/plans";
 import type { BillingInterval } from "@/lib/stripe";
+import { trackEvent } from "@/lib/hooks/useAnalytics";
 
 // ============================================================================
 // Types
@@ -440,11 +441,23 @@ function ApiKeysSection() {
     saveConfig({ key: apiKey.trim(), provider: selectedProvider });
     setIsSaved(true);
     setHasExistingConfig(true);
+
+    // Track BYOK configuration
+    trackEvent("byok_configured", {
+      provider: selectedProvider,
+    });
+
     setTimeout(() => setIsSaved(false), 2000);
   };
 
   const handleClear = () => {
     if (!confirm("Remove your API key?")) return;
+
+    // Track BYOK removal
+    trackEvent("byok_removed", {
+      provider: selectedProvider,
+    });
+
     clearConfig();
     setApiKey("");
     setHasExistingConfig(false);

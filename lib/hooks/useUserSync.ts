@@ -13,6 +13,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useUser } from "@clerk/nextjs";
+import posthog from "posthog-js";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@/lib/supabase/types";
 
@@ -95,8 +96,26 @@ export function useUserSync(): UseUserSyncResult {
 
             if (updateError) throw updateError;
             setDbUser(updatedUser);
+
+            // Track sign-in and update PostHog person properties
+            if (isNewSession) {
+              posthog.capture("user_signed_in", {
+                sign_in_count: updatedUser.sign_in_count,
+              });
+            }
+            posthog.people.set({
+              plan: updatedUser.plan,
+              messages_remaining: updatedUser.messages_remaining,
+              sign_in_count: updatedUser.sign_in_count,
+            });
           } else {
             setDbUser(existingUser);
+            // Update PostHog person properties even when not syncing
+            posthog.people.set({
+              plan: existingUser.plan,
+              messages_remaining: existingUser.messages_remaining,
+              sign_in_count: existingUser.sign_in_count,
+            });
           }
         } else {
           // New user - create record
@@ -117,6 +136,17 @@ export function useUserSync(): UseUserSyncResult {
 
           if (insertError) throw insertError;
           setDbUser(newUser);
+
+          // Track new user sign-up and set initial properties
+          posthog.capture("user_signed_in", {
+            sign_in_count: 1,
+            is_new_user: true,
+          });
+          posthog.people.set({
+            plan: newUser.plan,
+            messages_remaining: newUser.messages_remaining,
+            sign_in_count: 1,
+          });
         }
 
         // Update throttle timestamp
