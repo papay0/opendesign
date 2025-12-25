@@ -50,6 +50,8 @@ import {
   UserButton,
   useUser,
 } from "@clerk/nextjs";
+import { PlatformSelector } from "@/app/home/components/PlatformSelector";
+import { type Platform } from "@/lib/constants/platforms";
 
 // ============================================================================
 // Animation Variants
@@ -128,18 +130,18 @@ const examplePrompts: ExamplePrompt[] = [
 
 Also create the workout detail screen and profile screen.
 
-Mobile UI, warm gradient aesthetic. Soft coral (#FF8A80) and peach gradients transitioning to warm orange. Large rounded progress indicators with satisfying fill animations. Friendly rounded sans-serif typography. Organic blob shapes in background, motivational quotes section.`,
+Warm gradient aesthetic. Soft coral (#FF8A80) and peach gradients transitioning to warm orange. Large rounded progress indicators with satisfying fill animations. Friendly rounded sans-serif typography. Organic blob shapes in background, motivational quotes section.`,
   },
   {
     label: "Recipe Collection",
     styleTag: "Editorial",
     description: "Ingredient cards, cooking mode, favorites",
     icon: ChefHat,
-    fullPrompt: `Recipe collection app. Featured recipe hero section with beautiful food photography placeholder and cooking time badge. Ingredient list as horizontal scrolling cards with quantity badges and tap-to-check functionality. Step-by-step cooking mode with large readable text, timer widget, and progress indicator. Favorites collection organized in category tabs.
+    fullPrompt: `Recipe collection app. Featured recipe hero section with beautiful food photography placeholder and cooking time badge. Ingredient list with quantity badges and checkable items. Step-by-step cooking mode with large readable text, timer widget, and progress indicator. Favorites collection organized in category tabs.
 
 Also create the cooking mode screen and shopping list screen.
 
-Mobile UI, editorial magazine aesthetic. Warm cream (#FFF8F0) and terracotta (#C17C60) palette. Elegant serif typography for headings, clean sans-serif for body. Card layouts with generous whitespace and subtle shadows. Sophisticated food photography placeholders with rounded corners.`,
+Editorial magazine aesthetic. Warm cream (#FFF8F0) and terracotta (#C17C60) palette. Elegant serif typography for headings, clean sans-serif for body. Card layouts with generous whitespace and subtle shadows. Sophisticated food photography placeholders with rounded corners.`,
   },
   {
     label: "Travel Planner",
@@ -150,7 +152,7 @@ Mobile UI, editorial magazine aesthetic. Warm cream (#FFF8F0) and terracotta (#C
 
 Also create the day detail screen and expense logging screen.
 
-Mobile UI, vibrant wanderlust aesthetic. Ocean teal (#0097A7) and sunset coral (#FF7043) as primary colors. Polaroid-style photo frames with slight rotation. Handwritten accent font for headings. Map markers, dotted path lines connecting destinations, adventure-themed iconography.`,
+Vibrant wanderlust aesthetic. Ocean teal (#0097A7) and sunset coral (#FF7043) as primary colors. Polaroid-style photo frames with slight rotation. Handwritten accent font for headings. Map markers, dotted path lines connecting destinations, adventure-themed iconography.`,
   },
   {
     label: "Music Player",
@@ -161,7 +163,7 @@ Mobile UI, vibrant wanderlust aesthetic. Ocean teal (#0097A7) and sunset coral (
 
 Also create the library browse screen and search screen.
 
-Mobile UI, dark mode with neon accents. Deep charcoal (#1A1A2E) background with electric purple (#9D4EDD) and hot pink (#FF006E) gradient accents. Glassmorphic player controls with blur backdrop. Subtle glow effects on active elements. Bold geometric sans-serif typography with high contrast.`,
+Dark mode with neon accents. Deep charcoal (#1A1A2E) background with electric purple (#9D4EDD) and hot pink (#FF006E) gradient accents. Glassmorphic player controls with blur backdrop. Subtle glow effects on active elements. Bold geometric sans-serif typography with high contrast.`,
   },
 ];
 
@@ -336,6 +338,7 @@ function Header() {
 function HeroSection() {
   const [prompt, setPrompt] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
+  const [platform, setPlatform] = useState<Platform>("mobile");
   const router = useRouter();
   const { isSignedIn } = useUser();
   const { savePendingPrompt } = usePendingPrompt();
@@ -406,7 +409,7 @@ function HeroSection() {
     setIsStreaming(false);
 
     // Save prompt to localStorage for use after auth
-    savePendingPrompt(prompt.trim(), "mobile");
+    savePendingPrompt(prompt.trim(), platform);
 
     if (isSignedIn) {
       // Already logged in - go directly to home
@@ -486,9 +489,7 @@ function HeroSection() {
               className="w-full bg-transparent text-[#1A1A1A] placeholder-[#9A9A9A] text-lg px-4 py-3 resize-none focus:outline-none"
             />
             <div className="flex items-center justify-between px-2 pb-1">
-              <span className="text-xs text-[#9A9A9A]">
-                {isStreaming ? "Typing..." : "Press Enter or click to generate"}
-              </span>
+              <PlatformSelector selected={platform} onChange={setPlatform} />
               <button
                 type="submit"
                 disabled={isStreaming}
