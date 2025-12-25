@@ -5,6 +5,8 @@
  * - set-pro: Upgrade user to Pro plan
  * - set-free: Downgrade user to Free plan
  * - reset-messages: Reset message count based on plan
+ * - set-messages: Set monthly messages to specific count
+ * - set-bonus-messages: Set bonus messages to specific count
  * - cancel-stripe: Cancel Stripe subscription
  * - clear-stripe: Remove Stripe customer ID from user
  *
@@ -48,7 +50,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Parse request body
-    const { userId, action } = await req.json();
+    const { userId, action, messagesCount, bonusMessagesCount } = await req.json();
 
     if (!userId || !action) {
       return NextResponse.json({ error: "Missing userId or action" }, { status: 400 });
@@ -111,6 +113,38 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
           message: `Messages reset to ${planConfig.messagesPerMonth}`,
         });
+      }
+
+      case "set-messages": {
+        const count = parseInt(messagesCount);
+
+        if (isNaN(count) || count < 0) {
+          return NextResponse.json({ error: "Invalid message count" }, { status: 400 });
+        }
+
+        const { error } = await supabase
+          .from("users")
+          .update({ messages_remaining: count })
+          .eq("id", userId);
+
+        if (error) throw error;
+        return NextResponse.json({ message: `Monthly messages set to ${count}` });
+      }
+
+      case "set-bonus-messages": {
+        const count = parseInt(bonusMessagesCount);
+
+        if (isNaN(count) || count < 0) {
+          return NextResponse.json({ error: "Invalid bonus message count" }, { status: 400 });
+        }
+
+        const { error } = await supabase
+          .from("users")
+          .update({ bonus_messages_remaining: count })
+          .eq("id", userId);
+
+        if (error) throw error;
+        return NextResponse.json({ message: `Bonus messages set to ${count}` });
       }
 
       case "cancel-stripe": {

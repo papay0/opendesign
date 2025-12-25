@@ -115,10 +115,10 @@ async function handleMessagePackPurchase(userId: string, session: Stripe.Checkou
   const supabaseAdmin = getSupabaseAdmin();
   const messagesToAdd = 20; // MESSAGE_PACK.messages
 
-  // Add messages to user's remaining count
+  // Add messages to user's BONUS pool (never expires, separate from monthly)
   const { data: user, error: fetchError } = await supabaseAdmin
     .from('users')
-    .select('messages_remaining')
+    .select('bonus_messages_remaining')
     .eq('id', userId)
     .single();
 
@@ -130,7 +130,7 @@ async function handleMessagePackPurchase(userId: string, session: Stripe.Checkou
   const { error: updateError } = await supabaseAdmin
     .from('users')
     .update({
-      messages_remaining: user.messages_remaining + messagesToAdd,
+      bonus_messages_remaining: (user.bonus_messages_remaining || 0) + messagesToAdd,
     })
     .eq('id', userId);
 

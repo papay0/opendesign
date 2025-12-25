@@ -480,7 +480,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const { dbUser } = useUserSync();
   const isAdmin = dbUser?.role === "admin";
-  const { messagesRemaining, isLoading: isSubscriptionLoading } = useSubscription();
+  const { messagesRemaining, bonusMessagesRemaining, isLoading: isSubscriptionLoading } = useSubscription();
   const { isBYOKActive } = useBYOK();
 
   const [projects, setProjects] = useState<Project[]>([]);
@@ -492,12 +492,13 @@ export default function DashboardPage() {
   const [isAutoCreating, setIsAutoCreating] = useState(false);
   const pendingPromptProcessedRef = useRef(false);
 
-  // Determine if quota is exceeded (no BYOK and no messages remaining)
+  // Determine if quota is exceeded (no BYOK and no messages remaining in either pool)
   // Wait for subscription to load before determining - if no API key, we need accurate quota info
-  const isQuotaExceeded = !isBYOKActive && !isSubscriptionLoading && messagesRemaining <= 0;
-  // User can generate if: has API key OR (subscription loaded AND has messages remaining)
+  const totalMessagesRemaining = messagesRemaining + (bonusMessagesRemaining || 0);
+  const isQuotaExceeded = !isBYOKActive && !isSubscriptionLoading && totalMessagesRemaining <= 0;
+  // User can generate if: has API key OR (subscription loaded AND has messages remaining in either pool)
   // If no API key and subscription is loading, don't assume they can generate
-  const userCanGenerate = isBYOKActive || (!isSubscriptionLoading && messagesRemaining > 0);
+  const userCanGenerate = isBYOKActive || (!isSubscriptionLoading && totalMessagesRemaining > 0);
   // Show loading state while waiting for subscription (only if no API key)
   const isCheckingQuota = !isBYOKActive && isSubscriptionLoading;
 
@@ -691,7 +692,7 @@ export default function DashboardPage() {
       {userCanGenerate && user && (
         <>
           {/* Messages remaining indicator - only show for users without API key (subscription mode) */}
-          {!isBYOKActive && !isSubscriptionLoading && messagesRemaining > 0 && messagesRemaining <= 5 && (
+          {!isBYOKActive && !isSubscriptionLoading && totalMessagesRemaining > 0 && totalMessagesRemaining <= 5 && (
             <motion.div
               variants={fadeInUp}
               initial="hidden"
@@ -699,8 +700,8 @@ export default function DashboardPage() {
               className="mb-4"
             >
               <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-full text-sm text-amber-700">
-                <span className="font-medium">{messagesRemaining}</span>
-                <span>message{messagesRemaining !== 1 ? "s" : ""} remaining this month</span>
+                <span className="font-medium">{totalMessagesRemaining}</span>
+                <span>message{totalMessagesRemaining !== 1 ? "s" : ""} remaining</span>
               </div>
             </motion.div>
           )}

@@ -17,6 +17,7 @@ export interface SubscriptionState {
   plan: PlanType;
   messagesRemaining: number;
   messagesLimit: number;
+  bonusMessagesRemaining: number;
   messagesResetAt: Date | null;
   subscription: Subscription | null;
   isLoading: boolean;
@@ -38,6 +39,7 @@ export function useSubscription(): UseSubscriptionReturn {
     plan: "free",
     messagesRemaining: 2,
     messagesLimit: 2,
+    bonusMessagesRemaining: 0,
     messagesResetAt: null,
     subscription: null,
     isLoading: true,
@@ -54,7 +56,7 @@ export function useSubscription(): UseSubscriptionReturn {
       // Get user data including subscription info
       const { data: user, error: userError } = await supabase
         .from("users")
-        .select("id, plan, messages_remaining, messages_reset_at")
+        .select("id, plan, messages_remaining, bonus_messages_remaining, messages_reset_at")
         .eq("clerk_id", clerkUser.id)
         .single();
 
@@ -88,6 +90,7 @@ export function useSubscription(): UseSubscriptionReturn {
         plan,
         messagesRemaining: user?.messages_remaining ?? planConfig.messagesPerMonth,
         messagesLimit: planConfig.messagesPerMonth,
+        bonusMessagesRemaining: user?.bonus_messages_remaining ?? 0,
         messagesResetAt: user?.messages_reset_at
           ? new Date(user.messages_reset_at)
           : null,
@@ -113,11 +116,24 @@ export function useSubscription(): UseSubscriptionReturn {
   }, [clerkLoaded, fetchSubscription]);
 
   // Manually decrement messages (for optimistic UI updates)
+  // Priority: consume monthly messages first, then bonus messages
   const decrementMessages = useCallback(() => {
-    setState((prev) => ({
-      ...prev,
-      messagesRemaining: Math.max(0, prev.messagesRemaining - 1),
-    }));
+    setState((prev) => {
+      if (prev.messagesRemaining > 0) {
+        // Decrement from monthly pool
+        return {
+          ...prev,
+          messagesRemaining: prev.messagesRemaining - 1,
+        };
+      } else if (prev.bonusMessagesRemaining > 0) {
+        // Monthly exhausted, decrement from bonus pool
+        return {
+          ...prev,
+          bonusMessagesRemaining: prev.bonusMessagesRemaining - 1,
+        };
+      }
+      return prev;
+    });
   }, []);
 
   // Check if user can use a specific model

@@ -72,10 +72,13 @@ export default function AuthenticatedLayout({
               <span>Upgrade</span>
             </Link>
           ) : dbUser?.plan === "pro" && !isBYOKActive ? (
-            <div className="inline-flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm font-medium px-3 py-1.5 rounded-lg">
+            <Link
+              href="/home/settings"
+              className="inline-flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-all shadow-sm hover:shadow-md"
+            >
               <Crown className="w-3.5 h-3.5" />
               <span>Pro</span>
-            </div>
+            </Link>
           ) : null}
 
           {/* User profile */}

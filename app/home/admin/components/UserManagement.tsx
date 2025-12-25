@@ -37,6 +37,7 @@ interface User {
   name: string | null;
   plan: string;
   messages_remaining: number;
+  bonus_messages_remaining: number;
   stripe_customer_id: string | null;
   role: string;
   created_at: string;
@@ -60,6 +61,8 @@ export function UserManagement() {
     action: string;
     label: string;
   } | null>(null);
+  const [customMessageCounts, setCustomMessageCounts] = useState<Record<string, string>>({});
+  const [customBonusMessageCounts, setCustomBonusMessageCounts] = useState<Record<string, string>>({});
 
   // Fetch all users
   const fetchUsers = async () => {
@@ -283,7 +286,8 @@ export function UserManagement() {
                     )}
                   </p>
                   <p className="text-xs text-[#9A9A9A]">
-                    {user.plan} plan • {user.messages_remaining} messages
+                    {user.plan} plan • {user.messages_remaining} monthly
+                    {(user.bonus_messages_remaining || 0) > 0 && ` + ${user.bonus_messages_remaining} bonus`}
                     {user.stripe_customer_id && " • Stripe linked"}
                   </p>
                 </div>
@@ -375,6 +379,77 @@ export function UserManagement() {
                     variant="danger"
                     confirmRequired
                   />
+                </div>
+
+                {/* Set Custom Messages */}
+                <div className="mt-3 space-y-2">
+                  {/* Monthly Messages */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-[#9A9A9A] w-24">Monthly left:</span>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder={String(user.messages_remaining)}
+                      value={customMessageCounts[user.id] || ""}
+                      onChange={(e) =>
+                        setCustomMessageCounts((prev) => ({
+                          ...prev,
+                          [user.id]: e.target.value,
+                        }))
+                      }
+                      className="w-20 px-3 py-1.5 text-sm bg-[#F5F2EF] border border-[#E8E4E0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B8956F]/20 focus:border-[#B8956F]"
+                    />
+                    <button
+                      onClick={() => {
+                        const count = customMessageCounts[user.id];
+                        if (count && !isNaN(parseInt(count))) {
+                          executeAction(user.id, "set-messages", { messagesCount: count });
+                        }
+                      }}
+                      disabled={
+                        !customMessageCounts[user.id] ||
+                        isNaN(parseInt(customMessageCounts[user.id])) ||
+                        (actionState?.userId === user.id && actionState?.status === "loading")
+                      }
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#B8956F] hover:bg-[#A6845F] text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Set
+                    </button>
+                  </div>
+
+                  {/* Bonus Messages */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-[#9A9A9A] w-24">Bonus left:</span>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder={String(user.bonus_messages_remaining || 0)}
+                      value={customBonusMessageCounts[user.id] || ""}
+                      onChange={(e) =>
+                        setCustomBonusMessageCounts((prev) => ({
+                          ...prev,
+                          [user.id]: e.target.value,
+                        }))
+                      }
+                      className="w-20 px-3 py-1.5 text-sm bg-[#F5F2EF] border border-[#E8E4E0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#B8956F]/20 focus:border-[#B8956F]"
+                    />
+                    <button
+                      onClick={() => {
+                        const count = customBonusMessageCounts[user.id];
+                        if (count && !isNaN(parseInt(count))) {
+                          executeAction(user.id, "set-bonus-messages", { bonusMessagesCount: count });
+                        }
+                      }}
+                      disabled={
+                        !customBonusMessageCounts[user.id] ||
+                        isNaN(parseInt(customBonusMessageCounts[user.id])) ||
+                        (actionState?.userId === user.id && actionState?.status === "loading")
+                      }
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-500 hover:bg-amber-600 text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Set
+                    </button>
+                  </div>
                 </div>
 
                 {/* Action Status */}

@@ -440,7 +440,7 @@ export default function DesignPage() {
   const isAdmin = dbUser?.role === "admin";
 
   // Subscription state for quota management
-  const { messagesRemaining, isLoading: isSubscriptionLoading, refresh: refreshSubscription } = useSubscription();
+  const { messagesRemaining, bonusMessagesRemaining, isLoading: isSubscriptionLoading, refresh: refreshSubscription } = useSubscription();
 
   // BYOK state - users with their own API key have unlimited access
   const { isBYOKActive } = useBYOK();
@@ -496,9 +496,11 @@ export default function DesignPage() {
   // Determine if quota is exceeded
   // Use local state OR subscription state - whichever indicates exceeded
   // User can still send if they have their own API key (BYOK mode)
-  const isQuotaExceeded = !isBYOKActive && (localQuotaExceeded || (messagesRemaining <= 0 && !isSubscriptionLoading));
-  // User can send if: has API key (BYOK) OR (has messages remaining AND not locally marked as exceeded)
-  const canSendMessage = isBYOKActive || (messagesRemaining > 0 && !localQuotaExceeded);
+  // Check both monthly AND bonus message pools
+  const totalMessagesRemaining = messagesRemaining + (bonusMessagesRemaining || 0);
+  const isQuotaExceeded = !isBYOKActive && (localQuotaExceeded || (totalMessagesRemaining <= 0 && !isSubscriptionLoading));
+  // User can send if: has API key (BYOK) OR (has messages remaining in either pool AND not locally marked as exceeded)
+  const canSendMessage = isBYOKActive || (totalMessagesRemaining > 0 && !localQuotaExceeded);
 
   // Handle model change
   const handleModelChange = useCallback((model: ModelId) => {

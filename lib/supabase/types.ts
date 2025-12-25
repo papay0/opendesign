@@ -226,8 +226,9 @@ export interface Database {
           role: 'regular' | 'admin'     // User role
           plan: 'free' | 'pro'          // Subscription plan
           stripe_customer_id: string | null  // Stripe customer ID
-          messages_remaining: number    // Messages left this period
-          messages_reset_at: string     // When messages reset
+          messages_remaining: number    // Monthly messages left this period
+          bonus_messages_remaining: number // Purchased messages (never expire)
+          messages_reset_at: string     // When monthly messages reset
           created_at: string            // First sign-in timestamp
           updated_at: string            // Last profile update
           last_sign_in_at: string       // Last sign-in timestamp
@@ -243,6 +244,7 @@ export interface Database {
           plan?: 'free' | 'pro'
           stripe_customer_id?: string | null
           messages_remaining?: number
+          bonus_messages_remaining?: number
           messages_reset_at?: string
           created_at?: string
           updated_at?: string
@@ -259,6 +261,7 @@ export interface Database {
           plan?: 'free' | 'pro'
           stripe_customer_id?: string | null
           messages_remaining?: number
+          bonus_messages_remaining?: number
           messages_reset_at?: string
           created_at?: string
           updated_at?: string

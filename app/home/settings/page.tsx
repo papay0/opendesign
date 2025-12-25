@@ -112,12 +112,14 @@ function PlanSummary({
   plan,
   messagesRemaining,
   messagesLimit,
+  bonusMessagesRemaining,
   daysUntilReset,
   isBYOKActive,
 }: {
   plan: string;
   messagesRemaining: number;
   messagesLimit: number;
+  bonusMessagesRemaining: number;
   daysUntilReset: number;
   isBYOKActive: boolean;
 }) {
@@ -149,29 +151,52 @@ function PlanSummary({
           <span className="font-medium">Unlimited messages (BYOK active)</span>
         </div>
       ) : (
-        <>
-          <div className="flex items-baseline justify-between mb-2">
-            <span className="text-sm text-[#6B6459]">Messages this month</span>
-            <span className="font-semibold text-[#3D3A35]">
-              {messagesRemaining} <span className="text-[#9A9589] font-normal">/ {messagesLimit}</span>
-            </span>
+        <div className="space-y-4">
+          {/* Monthly Messages */}
+          <div>
+            <div className="flex items-baseline justify-between mb-2">
+              <span className="text-sm text-[#6B6459]">Monthly messages</span>
+              <span className="font-semibold text-[#3D3A35]">
+                {messagesLimit - messagesRemaining} <span className="text-[#9A9589] font-normal">used</span>
+                <span className="text-[#9A9589] font-normal"> / {messagesLimit}</span>
+              </span>
+            </div>
+            <div className="h-2 bg-[#E8E4DF] rounded-full overflow-hidden mb-2">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${((messagesLimit - messagesRemaining) / messagesLimit) * 100}%` }}
+                className={`h-full rounded-full ${
+                  messagesRemaining <= 0 ? "bg-red-500" :
+                  messagesRemaining <= messagesLimit * 0.2 ? "bg-amber-500" :
+                  "bg-gradient-to-r from-amber-400 to-orange-500"
+                }`}
+              />
+            </div>
+            <p className="text-sm text-[#9A9589] flex items-center gap-1.5">
+              <Calendar className="w-4 h-4" />
+              Resets in {daysUntilReset} days
+            </p>
           </div>
-          <div className="h-2 bg-[#E8E4DF] rounded-full overflow-hidden mb-3">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${((messagesLimit - messagesRemaining) / messagesLimit) * 100}%` }}
-              className={`h-full rounded-full ${
-                messagesRemaining <= 0 ? "bg-red-400" :
-                messagesRemaining <= messagesLimit * 0.2 ? "bg-amber-400" :
-                "bg-gradient-to-r from-amber-400 to-orange-400"
-              }`}
-            />
-          </div>
-          <p className="text-sm text-[#9A9589] flex items-center gap-1.5">
-            <Calendar className="w-4 h-4" />
-            Resets in {daysUntilReset} days
-          </p>
-        </>
+
+          {/* Bonus Messages - only show if user has any */}
+          {bonusMessagesRemaining > 0 && (
+            <div className="pt-3 border-t border-[#E8E4DF]">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-amber-500" />
+                  <span className="text-sm text-[#6B6459]">Bonus messages</span>
+                </div>
+                <span className="font-semibold text-[#3D3A35]">
+                  {bonusMessagesRemaining} <span className="text-[#9A9589] font-normal">remaining</span>
+                </span>
+              </div>
+              <p className="text-xs text-emerald-600 flex items-center gap-1.5">
+                <Check className="w-3 h-3" />
+                Never expires • Used after monthly quota
+              </p>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
@@ -627,7 +652,7 @@ function ApiKeysSection() {
 // ============================================================================
 
 export default function SettingsPage() {
-  const { plan, messagesRemaining, messagesLimit, messagesResetAt, isLoading } = useSubscription();
+  const { plan, messagesRemaining, messagesLimit, bonusMessagesRemaining, messagesResetAt, isLoading } = useSubscription();
   const { isBYOKActive, isInitialized } = useBYOK();
 
   // Default to API Keys tab if BYOK is active, otherwise Subscription
@@ -669,6 +694,7 @@ export default function SettingsPage() {
         plan={plan}
         messagesRemaining={messagesRemaining}
         messagesLimit={planConfig.messagesPerMonth}
+        bonusMessagesRemaining={bonusMessagesRemaining}
         daysUntilReset={daysUntilReset}
         isBYOKActive={isBYOKActive}
       />
