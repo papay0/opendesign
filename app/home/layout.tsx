@@ -70,7 +70,7 @@ export default function AuthenticatedLayout({
               ) : isFreePlan && !isBYOKActive ? (
                 // Free plan - show upgrade button
                 <Link
-                  href="/pricing"
+                  href="/home/settings"
                   className="inline-flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-all shadow-sm hover:shadow-md"
                 >
                   <Crown className="w-3.5 h-3.5" />
