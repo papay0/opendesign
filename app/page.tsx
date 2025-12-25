@@ -335,6 +335,69 @@ function Header() {
 // Bold typography-driven hero with asymmetric layout
 // ============================================================================
 
+// ============================================================================
+// Component: Demo Video Browser Mockup
+// Clean browser window frame with the demo video
+// ============================================================================
+
+function DemoVideoMockup() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+      className="relative w-full"
+    >
+      {/* Ambient glow behind the browser */}
+      <div className="absolute inset-0 blur-3xl opacity-15 bg-gradient-to-br from-[#B8956F] via-[#D4B896] to-[#E8D4C4] scale-105" />
+
+      {/* Browser Window Frame - with relative positioning for the label */}
+      <div className="relative">
+        <div className="rounded-lg overflow-hidden shadow-2xl border border-[#E8E4E0]">
+          {/* Browser Chrome / Title Bar - Compact */}
+          <div className="bg-[#F5F2EF] px-3 py-2 flex items-center gap-8 border-b border-[#E8E4E0]">
+            {/* Traffic lights */}
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full bg-[#FF5F57]" />
+              <div className="w-2.5 h-2.5 rounded-full bg-[#FEBC2E]" />
+              <div className="w-2.5 h-2.5 rounded-full bg-[#28C840]" />
+            </div>
+
+            {/* URL - simple text, no box */}
+            <span className="text-[11px] text-[#6B6B6B]">opendesign.build</span>
+          </div>
+
+          {/* Video content - slightly scaled to crop black bars */}
+          <div className="bg-[#FAF8F5] overflow-hidden">
+            <video
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="w-full aspect-video object-cover scale-[1.04]"
+            >
+              <source
+                src="https://xqpuvtopszitdtittjao.supabase.co/storage/v1/object/public/public-assets/OpenDesign%20Demo.mp4"
+                type="video/mp4"
+              />
+            </video>
+          </div>
+        </div>
+
+        {/* Floating label - positioned relative to the browser frame */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8, duration: 0.5 }}
+          className="absolute -bottom-5 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-sm border border-[#E8E4E0] rounded-full px-4 py-1.5 shadow-lg z-10"
+        >
+          <span className="text-xs font-medium text-[#6B6B6B]">Live Demo</span>
+        </motion.div>
+      </div>
+    </motion.div>
+  );
+}
+
 function HeroSection() {
   const [prompt, setPrompt] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -423,90 +486,102 @@ function HeroSection() {
   };
 
   return (
-    <section className="pt-32 pb-24 px-6" aria-label="AI App Designer Hero">
-      <div className="max-w-6xl mx-auto">
-        {/* Badges */}
-        <motion.div
-          variants={fadeIn}
-          initial="hidden"
-          animate="visible"
-          className="mb-8 flex flex-wrap items-center gap-3"
-        >
-          <a
-            href="https://github.com/papay0/opendesign"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#E8E4E0] bg-white/50 text-sm text-[#1A1A1A] hover:bg-white hover:border-[#1A1A1A] hover:shadow-sm transition-all"
-          >
-            <Github className="w-4 h-4" />
-            Open Source
-            <ArrowRight className="w-3 h-3 text-[#6B6B6B]" />
-          </a>
-          <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#E8E4E0] bg-white/50 text-sm text-[#6B6B6B]">
-            <Sparkles className="w-4 h-4 text-[#B8956F]" />
-            1,000+ designs created
-          </span>
-        </motion.div>
-
-        {/* Main headline - Large serif typography with SEO keywords */}
-        <motion.h1
-          variants={slideUp}
-          initial="hidden"
-          animate="visible"
-          className="font-serif text-5xl md:text-7xl lg:text-8xl text-[#1A1A1A] tracking-tight leading-[1.05] mb-8 max-w-4xl"
-        >
-          AI App Designer.{" "}
-          <span className="text-[#B8956F] italic">Mockups in minutes.</span>
-        </motion.h1>
-
-        {/* Subheadline */}
-        <motion.p
-          variants={slideUp}
-          initial="hidden"
-          animate="visible"
-          transition={{ delay: 0.1 }}
-          className="text-xl md:text-2xl text-[#6B6B6B] max-w-2xl mb-12 leading-relaxed"
-        >
-          From idea to beautiful mockups in minutes. Just describe what you want.
-        </motion.p>
-
-        {/* Main Input Form */}
-        <motion.form
-          variants={slideUp}
-          initial="hidden"
-          animate="visible"
-          transition={{ delay: 0.2 }}
-          onSubmit={handleSubmit}
-          className="max-w-2xl mb-8"
-        >
-          <div className="bg-white border border-[#E8E4E0] rounded-2xl p-2 shadow-sm">
-            <textarea
-              ref={textareaRef}
-              value={prompt}
-              onChange={handlePromptChange}
-              placeholder="I want to design an app that..."
-              rows={4}
-              className="w-full bg-transparent text-[#1A1A1A] placeholder-[#9A9A9A] text-lg px-4 py-3 resize-none focus:outline-none"
-            />
-            <div className="flex items-center justify-between px-2 pb-1">
-              <PlatformSelector selected={platform} onChange={setPlatform} />
-              <button
-                type="submit"
-                disabled={isStreaming}
-                className="flex items-center gap-2 bg-[#B8956F] text-white font-medium px-5 py-2.5 rounded-xl hover:bg-[#A6845F] transition-colors disabled:opacity-50"
+    <section className="pt-32 pb-24 px-6 overflow-hidden" aria-label="AI App Designer Hero">
+      <div className="max-w-7xl mx-auto">
+        {/* Two-column layout: Content left, Video right (video is larger) */}
+        <div className="grid lg:grid-cols-[1fr_1.3fr] gap-12 lg:gap-10 items-center">
+          {/* Left Column - Content */}
+          <div>
+            {/* Badges */}
+            <motion.div
+              variants={fadeIn}
+              initial="hidden"
+              animate="visible"
+              className="mb-8 flex flex-wrap items-center gap-3"
+            >
+              <a
+                href="https://github.com/papay0/opendesign"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#E8E4E0] bg-white/50 text-sm text-[#1A1A1A] hover:bg-white hover:border-[#1A1A1A] hover:shadow-sm transition-all"
               >
-                Design it
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </motion.form>
+                <Github className="w-4 h-4" />
+                Open Source
+                <ArrowRight className="w-3 h-3 text-[#6B6B6B]" />
+              </a>
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#E8E4E0] bg-white/50 text-sm text-[#6B6B6B]">
+                <Sparkles className="w-4 h-4 text-[#B8956F]" />
+                1,000+ designs created
+              </span>
+            </motion.div>
 
-        {/* Inspiration Cards */}
+            {/* Main headline - Large serif typography with SEO keywords */}
+            <motion.h1
+              variants={slideUp}
+              initial="hidden"
+              animate="visible"
+              className="font-serif text-5xl md:text-6xl lg:text-7xl text-[#1A1A1A] tracking-tight leading-[1.05] mb-6"
+            >
+              AI App Designer.{" "}
+              <span className="text-[#B8956F] italic">Mockups in minutes.</span>
+            </motion.h1>
+
+            {/* Subheadline */}
+            <motion.p
+              variants={slideUp}
+              initial="hidden"
+              animate="visible"
+              transition={{ delay: 0.1 }}
+              className="text-xl text-[#6B6B6B] mb-10 leading-relaxed"
+            >
+              From idea to beautiful mockups in minutes. Just describe what you want.
+            </motion.p>
+
+            {/* Main Input Form */}
+            <motion.form
+              variants={slideUp}
+              initial="hidden"
+              animate="visible"
+              transition={{ delay: 0.2 }}
+              onSubmit={handleSubmit}
+              className="mb-8"
+            >
+              <div className="bg-white border border-[#E8E4E0] rounded-2xl p-2 shadow-sm">
+                <textarea
+                  ref={textareaRef}
+                  value={prompt}
+                  onChange={handlePromptChange}
+                  placeholder="I want to design an app that..."
+                  rows={3}
+                  className="w-full bg-transparent text-[#1A1A1A] placeholder-[#9A9A9A] text-lg px-4 py-3 resize-none focus:outline-none"
+                />
+                <div className="flex items-center justify-between px-2 pb-1">
+                  <PlatformSelector selected={platform} onChange={setPlatform} />
+                  <button
+                    type="submit"
+                    disabled={isStreaming}
+                    className="flex items-center gap-2 bg-[#B8956F] text-white font-medium px-5 py-2.5 rounded-xl hover:bg-[#A6845F] transition-colors disabled:opacity-50"
+                  >
+                    Design it
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </motion.form>
+          </div>
+
+          {/* Right Column - Demo Video in Phone Mockup */}
+          <div className="flex justify-center lg:justify-end">
+            <DemoVideoMockup />
+          </div>
+        </div>
+
+        {/* Inspiration Cards - Full width below the hero */}
         <motion.div
           variants={staggerContainer}
           initial="hidden"
           animate="visible"
+          className="mt-16"
         >
           <p className="text-sm text-[#9A9A9A] mb-4 flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-[#B8956F]" />
