@@ -709,9 +709,16 @@ function ModeStatusBanner({
 // ============================================================================
 
 export default function SettingsPage() {
-  const [activeSection, setActiveSection] = useState<SettingsSection>("subscription");
-  const { isBYOKActive, provider } = useBYOK();
+  const [activeSection, setActiveSection] = useState<SettingsSection | null>(null);
+  const { isBYOKActive, provider, isInitialized } = useBYOK();
   const { plan, messagesRemaining } = useSubscription();
+
+  // Set the default tab based on which mode is active
+  useEffect(() => {
+    if (isInitialized && activeSection === null) {
+      setActiveSection(isBYOKActive ? "api-keys" : "subscription");
+    }
+  }, [isInitialized, isBYOKActive, activeSection]);
 
   // Build section options with active mode indicators
   const sectionOptions = useMemo(() => [
@@ -728,6 +735,33 @@ export default function SettingsPage() {
       isActiveMode: isBYOKActive,
     },
   ], [isBYOKActive]);
+
+  // Show loading skeleton while initializing
+  if (!isInitialized || activeSection === null) {
+    return (
+      <div className="max-w-lg mx-auto px-5 py-8">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="font-serif text-3xl text-[#1A1A1A] mb-1">Settings</h1>
+          <p className="text-sm text-[#6B6B6B]">
+            Manage your subscription and API keys
+          </p>
+        </div>
+
+        {/* Mode Status Banner Skeleton */}
+        <div className="h-[72px] bg-[#F5F2EF] rounded-xl animate-pulse mb-6" />
+
+        {/* Segmented Control Skeleton */}
+        <div className="h-12 bg-[#F5F2EF] rounded-xl animate-pulse mb-6" />
+
+        {/* Content Skeleton */}
+        <div className="space-y-4">
+          <div className="h-48 bg-[#F5F2EF] rounded-2xl animate-pulse" />
+          <div className="h-20 bg-[#F5F2EF] rounded-xl animate-pulse" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-lg mx-auto px-5 py-8">

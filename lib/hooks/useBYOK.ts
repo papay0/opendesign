@@ -30,6 +30,8 @@ export interface UseBYOKReturn {
   provider: Provider | null;
   /** The full API config object, or null if not configured */
   apiConfig: ApiConfig | null;
+  /** True once the hook has loaded the config from localStorage */
+  isInitialized: boolean;
   /** Clear the stored API config */
   clearApiConfig: () => void;
   /** Save a new API config */
@@ -120,6 +122,7 @@ export function useBYOK(): UseBYOKReturn {
     isBYOKActive: isInitialized && !!apiConfig?.key,
     provider: apiConfig?.provider || null,
     apiConfig,
+    isInitialized,
     clearApiConfig,
     setApiConfig,
   };
