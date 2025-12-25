@@ -87,7 +87,7 @@ export function StreamingScreenPreview({
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #ffffff;
+      background: transparent;
       min-height: 100vh;
       width: ${PHONE_WIDTH}px;
     }
@@ -121,7 +121,7 @@ export function StreamingScreenPreview({
     <div className="flex flex-col items-center gap-3">
       {/* Phone Frame */}
       <div
-        className="relative bg-[#1A1A1A] rounded-[3rem] p-3 shadow-2xl"
+        className="relative bg-[#1A1A1A] rounded-[3rem] p-3 shadow-2xl overflow-hidden"
         style={{ transformOrigin: "top center" }}
       >
         {/* Streaming indicator */}
@@ -137,7 +137,7 @@ export function StreamingScreenPreview({
 
         {/* Screen */}
         <div
-          className="bg-white rounded-[2.5rem] overflow-hidden"
+          className="bg-[#1A1A1A] rounded-[2.25rem] overflow-hidden"
           style={{ width: PHONE_WIDTH, height: contentHeight }}
         >
           <iframe

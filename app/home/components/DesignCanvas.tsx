@@ -95,7 +95,7 @@ const PhoneMockup = memo(function PhoneMockup({
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #ffffff;
+      background: transparent;
       min-height: 100vh;
       width: ${PHONE_WIDTH}px;
     }
@@ -129,7 +129,7 @@ const PhoneMockup = memo(function PhoneMockup({
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #ffffff;
+      background: transparent;
       min-height: 100vh;
       width: ${PHONE_WIDTH}px;
     }
@@ -172,7 +172,7 @@ const PhoneMockup = memo(function PhoneMockup({
       {/* Phone Frame */}
       <div
         ref={mockupRef}
-        className={`relative bg-[#1A1A1A] rounded-[3rem] p-3 shadow-2xl transition-all duration-300 ${
+        className={`relative bg-[#1A1A1A] rounded-[3rem] p-3 shadow-2xl overflow-hidden transition-all duration-300 ${
         isEditing ? "ring-4 ring-blue-500/50 animate-pulse" : ""
       }`}>
         {/* Editing/Complete indicator badge */}
@@ -185,7 +185,7 @@ const PhoneMockup = memo(function PhoneMockup({
 
         {/* Screen - fixed height with scrollable content */}
         <div
-          className="bg-white rounded-[2.5rem] overflow-hidden"
+          className="bg-[#1A1A1A] rounded-[2.25rem] overflow-hidden"
           style={{ width: PHONE_WIDTH, height: PHONE_HEIGHT }}
         >
           <iframe
@@ -275,7 +275,7 @@ const StreamingPhoneMockup = memo(function StreamingPhoneMockup({
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #ffffff;
+      background: transparent;
       min-height: 100vh;
       width: ${PHONE_WIDTH}px;
     }
@@ -309,7 +309,7 @@ const StreamingPhoneMockup = memo(function StreamingPhoneMockup({
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #ffffff;
+      background: transparent;
       min-height: 100vh;
       width: ${PHONE_WIDTH}px;
     }
@@ -331,7 +331,7 @@ const StreamingPhoneMockup = memo(function StreamingPhoneMockup({
   return (
     <div className="flex flex-col items-center gap-3 flex-shrink-0">
       {/* Phone Frame */}
-      <div className="relative bg-[#1A1A1A] rounded-[3rem] p-3 shadow-2xl">
+      <div className="relative bg-[#1A1A1A] rounded-[3rem] p-3 shadow-2xl overflow-hidden">
         {/* Streaming indicator */}
         <div className="absolute -top-2 left-1/2 -translate-x-1/2 z-20 bg-[#B8956F] text-white text-xs px-3 py-1 rounded-full flex items-center gap-2">
           <Loader2 className="w-3 h-3 animate-spin" />
@@ -340,7 +340,7 @@ const StreamingPhoneMockup = memo(function StreamingPhoneMockup({
 
         {/* Screen - fixed height with scrollable content */}
         <div
-          className="bg-white rounded-[2.5rem] overflow-hidden"
+          className="bg-[#1A1A1A] rounded-[2.25rem] overflow-hidden"
           style={{ width: PHONE_WIDTH, height: PHONE_HEIGHT }}
         >
           <iframe
@@ -413,7 +413,7 @@ export function DesignCanvas({
           const zoomFactor = 1 - dy * 0.01;
 
           setTransform((prev) => {
-            const newScale = Math.min(Math.max(prev.scale * zoomFactor, 0.1), 2);
+            const newScale = Math.min(Math.max(prev.scale * zoomFactor, 0.1), 10);
             const scaleChange = newScale / prev.scale;
 
             // Adjust position to zoom towards mouse
@@ -440,7 +440,7 @@ export function DesignCanvas({
         const mouseY = oy - rect.top;
 
         setTransform((prev) => {
-          const newScale = Math.min(Math.max(scale, 0.1), 2);
+          const newScale = Math.min(Math.max(scale, 0.1), 10);
           const scaleChange = newScale / prev.scale;
 
           const newX = mouseX - (mouseX - prev.x) * scaleChange;
@@ -465,7 +465,7 @@ export function DesignCanvas({
       wheel: { eventOptions: { passive: false } },
       drag: { pointer: { buttons: [1] } },
       pinch: {
-        scaleBounds: { min: 0.1, max: 2 },
+        scaleBounds: { min: 0.1, max: 10 },
         from: () => [transform.scale, 0],
       },
     }
@@ -485,7 +485,7 @@ export function DesignCanvas({
   const handleZoomIn = () => {
     setTransform((prev) => ({
       ...prev,
-      scale: Math.min(prev.scale * 1.2, 2),
+      scale: Math.min(prev.scale * 1.2, 10),
     }));
   };
 
@@ -505,7 +505,7 @@ export function DesignCanvas({
       {/* Canvas Content */}
       <div className="flex-1 overflow-hidden relative">
         {!hasScreens ? (
-          <div className="flex flex-col items-center justify-center h-full text-center">
+          <div className="w-full h-full flex flex-col items-center justify-center text-center">
             <div className="w-16 h-16 rounded-2xl bg-[#E8E4E0] flex items-center justify-center mb-4">
               <PlatformIcon className="w-8 h-8 text-[#9A9A9A]" />
             </div>

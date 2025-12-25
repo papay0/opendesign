@@ -57,7 +57,7 @@ export const BrowserMockup = memo(function BrowserMockup({
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #ffffff;
+      background: transparent;
       min-height: 100vh;
       width: ${BROWSER_WIDTH}px;
     }
@@ -91,7 +91,7 @@ export const BrowserMockup = memo(function BrowserMockup({
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #ffffff;
+      background: transparent;
       min-height: 100vh;
       width: ${BROWSER_WIDTH}px;
     }
@@ -242,7 +242,7 @@ export const StreamingBrowserMockup = memo(function StreamingBrowserMockup({
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #ffffff;
+      background: transparent;
       min-height: 100vh;
       width: ${BROWSER_WIDTH}px;
     }
@@ -276,7 +276,7 @@ export const StreamingBrowserMockup = memo(function StreamingBrowserMockup({
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #ffffff;
+      background: transparent;
       min-height: 100vh;
       width: ${BROWSER_WIDTH}px;
     }
