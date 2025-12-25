@@ -23,7 +23,7 @@
 import { streamText } from "ai";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { SYSTEM_PROMPTS, type Platform } from "@/lib/prompts/system-prompts";
+import { getSystemPrompt, type Platform } from "@/lib/prompts/system-prompts";
 import { auth } from "@clerk/nextjs/server";
 import { createClient } from "@supabase/supabase-js";
 import { isModelAllowedForPlan, type PlanType } from "@/lib/constants/plans";
@@ -60,7 +60,7 @@ export async function POST(request: Request): Promise<Response> {
     // Get user from database to check quota
     const { data: dbUser, error: userError } = await supabaseAdmin
       .from("users")
-      .select("id, plan, messages_remaining")
+      .select("id, plan, messages_remaining, bonus_messages_remaining, name")
       .eq("clerk_id", clerkUserId)
       .single();
 
@@ -79,7 +79,9 @@ export async function POST(request: Request): Promise<Response> {
 
     // Check if user has messages remaining - BUT only if they don't have their own API key
     // BYOK users can use the service without quota restrictions
-    if (!userApiKey && dbUser.messages_remaining <= 0) {
+    // Check both monthly and bonus message pools
+    const bonusRemaining = dbUser.bonus_messages_remaining || 0;
+    if (!userApiKey && dbUser.messages_remaining <= 0 && bonusRemaining <= 0) {
       const upgradeMessage = dbUser.plan === "free"
         ? "You've used all your free messages this month. Upgrade to Pro for 50 messages/month!"
         : "You've used all your messages this month. Purchase more messages to continue.";
@@ -90,6 +92,7 @@ export async function POST(request: Request): Promise<Response> {
           code: "QUOTA_EXCEEDED",
           plan: dbUser.plan,
           messagesRemaining: 0,
+          bonusMessagesRemaining: 0,
         }),
         { status: 429, headers: { "Content-Type": "application/json" } }
       );
@@ -98,7 +101,7 @@ export async function POST(request: Request): Promise<Response> {
     // Determine which API key to use
     // Priority: 1) User's BYOK key, 2) Platform key for users with quota
     const platformApiKey = process.env.OPENROUTER_API_KEY;
-    const hasQuota = dbUser.messages_remaining > 0;
+    const hasQuota = dbUser.messages_remaining > 0 || bonusRemaining > 0;
 
     let apiKey: string;
     let provider: "openrouter" | "gemini";
@@ -165,8 +168,9 @@ export async function POST(request: Request): Promise<Response> {
       );
     }
 
-    // Get the system prompt for this platform
-    const systemPrompt = SYSTEM_PROMPTS[platform as Platform];
+    // Get the system prompt for this platform, personalized with user's name
+    const userFirstName = dbUser?.name?.split(" ")[0] || null;
+    const systemPrompt = getSystemPrompt(platform as Platform, userFirstName);
 
     console.log(`[Design Stream] Starting stream for: ${prompt.substring(0, 100)}...`);
 
@@ -320,23 +324,45 @@ IMPORTANT:
           // ================================================================
           // Decrement user's message quota after successful generation
           // ONLY when using platform key - BYOK users don't consume quota
+          // Priority: consume monthly messages first, then bonus messages
           // ================================================================
           let updatedMessagesRemaining = dbUser.messages_remaining;
+          let updatedBonusRemaining = bonusRemaining;
 
           if (usingPlatformKey) {
             try {
-              const { error: decrementError } = await supabaseAdmin
-                .from("users")
-                .update({
-                  messages_remaining: dbUser.messages_remaining - 1,
-                })
-                .eq("id", dbUser.id);
+              // Determine which pool to decrement from
+              // Priority: monthly first, then bonus
+              if (dbUser.messages_remaining > 0) {
+                // Decrement from monthly pool
+                const { error: decrementError } = await supabaseAdmin
+                  .from("users")
+                  .update({
+                    messages_remaining: dbUser.messages_remaining - 1,
+                  })
+                  .eq("id", dbUser.id);
 
-              if (decrementError) {
-                console.error("[Design Stream] Failed to decrement messages:", decrementError);
-              } else {
-                updatedMessagesRemaining = dbUser.messages_remaining - 1;
-                console.log(`[Design Stream] Decremented messages for user ${dbUser.id}. Remaining: ${updatedMessagesRemaining}`);
+                if (decrementError) {
+                  console.error("[Design Stream] Failed to decrement monthly messages:", decrementError);
+                } else {
+                  updatedMessagesRemaining = dbUser.messages_remaining - 1;
+                  console.log(`[Design Stream] Decremented monthly messages for user ${dbUser.id}. Remaining: ${updatedMessagesRemaining}`);
+                }
+              } else if (bonusRemaining > 0) {
+                // Monthly exhausted, decrement from bonus pool
+                const { error: decrementError } = await supabaseAdmin
+                  .from("users")
+                  .update({
+                    bonus_messages_remaining: bonusRemaining - 1,
+                  })
+                  .eq("id", dbUser.id);
+
+                if (decrementError) {
+                  console.error("[Design Stream] Failed to decrement bonus messages:", decrementError);
+                } else {
+                  updatedBonusRemaining = bonusRemaining - 1;
+                  console.log(`[Design Stream] Decremented bonus messages for user ${dbUser.id}. Remaining: ${updatedBonusRemaining}`);
+                }
               }
             } catch (decrementErr) {
               console.error("[Design Stream] Error decrementing messages:", decrementErr);
@@ -349,6 +375,7 @@ IMPORTANT:
           const doneData = `data: ${JSON.stringify({
             done: true,
             messagesRemaining: Math.max(0, updatedMessagesRemaining),
+            bonusMessagesRemaining: Math.max(0, updatedBonusRemaining),
           })}\n\n`;
           controller.enqueue(encoder.encode(doneData));
 

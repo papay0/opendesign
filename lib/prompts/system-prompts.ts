@@ -88,6 +88,18 @@ const REMEMBER_RULES = `REMEMBER:
 - ALWAYS end with a final <!-- MESSAGE: ... --> summarizing what you created and inviting follow-up requests`;
 
 // ============================================================================
+// USER PERSONALIZATION (placeholder replaced at runtime)
+// ============================================================================
+
+const PERSONALIZATION_RULES = `USER PERSONALIZATION:
+- The current user's first name is: {{USER_NAME}}
+- When showing greetings, profile displays, or personalized UI elements, use "{{USER_NAME}}" as the user's name
+- Examples: "Hello, {{USER_NAME}}", "Welcome back, {{USER_NAME}}", profile cards showing "{{USER_NAME}}"
+- For profile avatars, use: https://ui-avatars.com/api/?name={{USER_NAME}}&size=48&background=random
+- IMPORTANT: If the user explicitly asks to use a different name in their prompt, use that name instead
+- If the user name is "the user" (no name provided), use generic names like "Alex" or "You"`;
+
+// ============================================================================
 // MOBILE-SPECIFIC PIECES
 // ============================================================================
 
@@ -227,7 +239,7 @@ const DESKTOP_EXAMPLE = `EXAMPLE OUTPUT (notice the order - name and icon FIRST)
 // PRE-COMPOSED FINAL PROMPTS (no runtime conditionals)
 // ============================================================================
 
-export const MOBILE_SYSTEM_PROMPT = [
+const MOBILE_SYSTEM_PROMPT_BASE = [
   MOBILE_INTRO,
   FIRST_OUTPUT_RULE,
   COMMUNICATION_RULES,
@@ -239,10 +251,11 @@ export const MOBILE_SYSTEM_PROMPT = [
   ICON_RULES,
   MOBILE_LAYOUT,
   MOBILE_EXAMPLE,
+  PERSONALIZATION_RULES,
   REMEMBER_RULES,
 ].join("\n\n");
 
-export const DESKTOP_SYSTEM_PROMPT = [
+const DESKTOP_SYSTEM_PROMPT_BASE = [
   DESKTOP_INTRO,
   FIRST_OUTPUT_RULE,
   COMMUNICATION_RULES,
@@ -254,13 +267,38 @@ export const DESKTOP_SYSTEM_PROMPT = [
   ICON_RULES,
   DESKTOP_LAYOUT,
   DESKTOP_EXAMPLE,
+  PERSONALIZATION_RULES,
   REMEMBER_RULES,
 ].join("\n\n");
 
-// Simple lookup object - no if/else needed at runtime
-export const SYSTEM_PROMPTS = {
-  mobile: MOBILE_SYSTEM_PROMPT,
-  desktop: DESKTOP_SYSTEM_PROMPT,
+// Platform type
+export type Platform = "mobile" | "desktop";
+
+// Base prompts lookup (internal)
+const SYSTEM_PROMPTS_BASE = {
+  mobile: MOBILE_SYSTEM_PROMPT_BASE,
+  desktop: DESKTOP_SYSTEM_PROMPT_BASE,
 } as const;
 
-export type Platform = keyof typeof SYSTEM_PROMPTS;
+/**
+ * Get a personalized system prompt for the given platform.
+ * Replaces {{USER_NAME}} placeholder with the actual user's first name.
+ *
+ * @param platform - "mobile" or "desktop"
+ * @param userName - User's first name, or null for anonymous users
+ * @returns The complete system prompt with personalization
+ */
+export function getSystemPrompt(
+  platform: Platform,
+  userName: string | null
+): string {
+  const name = userName || "the user";
+  const basePrompt = SYSTEM_PROMPTS_BASE[platform];
+  return basePrompt.replace(/\{\{USER_NAME\}\}/g, name);
+}
+
+// Legacy export for backwards compatibility (uses generic placeholder)
+export const SYSTEM_PROMPTS = {
+  mobile: MOBILE_SYSTEM_PROMPT_BASE.replace(/\{\{USER_NAME\}\}/g, "the user"),
+  desktop: DESKTOP_SYSTEM_PROMPT_BASE.replace(/\{\{USER_NAME\}\}/g, "the user"),
+} as const;
