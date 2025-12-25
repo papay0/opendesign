@@ -36,6 +36,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { PLANS, MESSAGE_PACK } from "@/lib/constants/plans";
+import { usePendingPrompt } from "@/lib/hooks/usePendingPrompt";
 import {
   SignInButton,
   SignUpButton,
@@ -277,11 +278,26 @@ function Header() {
 
 function HeroSection() {
   const [prompt, setPrompt] = useState("");
+  const router = useRouter();
+  const { isSignedIn } = useUser();
+  const { savePendingPrompt } = usePendingPrompt();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Navigate to design page with prompt
-    console.log("Design prompt:", prompt);
+    if (!prompt.trim()) return;
+
+    // Save prompt to localStorage for use after auth
+    savePendingPrompt(prompt.trim(), "mobile");
+
+    if (isSignedIn) {
+      // Already logged in - go directly to home
+      // Home page will detect pending prompt and create project
+      router.push("/home");
+    } else {
+      // Not logged in - redirect to sign-in
+      // After sign-in, Clerk redirects to /home (per env config)
+      router.push("/sign-in");
+    }
   };
 
   return (

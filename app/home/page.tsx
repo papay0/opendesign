@@ -17,7 +17,7 @@
  * Projects are fetched from Supabase and filtered by user ID.
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -42,6 +42,7 @@ import type { PlanType } from "@/lib/constants/plans";
 import { useUserSync } from "@/lib/hooks/useUserSync";
 import { useSubscription } from "@/lib/hooks/useSubscription";
 import { useBYOK } from "@/lib/hooks/useBYOK";
+import { usePendingPrompt } from "@/lib/hooks/usePendingPrompt";
 import { QuotaExceededBanner } from "./components/QuotaExceededBanner";
 import {
   Tooltip,
@@ -482,6 +483,11 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
 
+  // Pending prompt from landing page
+  const { getPendingPrompt, clearPendingPrompt } = usePendingPrompt();
+  const [isAutoCreating, setIsAutoCreating] = useState(false);
+  const pendingPromptProcessedRef = useRef(false);
+
   // Determine if quota is exceeded (no BYOK and no messages remaining)
   // Wait for subscription to load before determining - if no API key, we need accurate quota info
   const isQuotaExceeded = !isBYOKActive && !isSubscriptionLoading && messagesRemaining <= 0;
@@ -518,6 +524,50 @@ export default function DashboardPage() {
 
     fetchProjects();
   }, [isLoaded, user]);
+
+  // Check for pending prompt from landing page and auto-create project
+  useEffect(() => {
+    // Wait for user to be loaded and not already processing
+    if (!isLoaded || !user || isAutoCreating || pendingPromptProcessedRef.current) return;
+
+    const pendingPrompt = getPendingPrompt();
+    if (!pendingPrompt) return;
+
+    // Mark as processing to prevent duplicate calls
+    pendingPromptProcessedRef.current = true;
+    setIsAutoCreating(true);
+
+    // Clear the pending prompt immediately to prevent re-triggering
+    clearPendingPrompt();
+
+    // Create the project
+    async function createFromPendingPrompt() {
+      const supabase = createClient();
+
+      const { data, error } = await supabase
+        .from("projects")
+        .insert({
+          user_id: user!.id,
+          name: "Untitled Project",
+          app_idea: pendingPrompt!.prompt,
+          platform: pendingPrompt!.platform || "mobile",
+          initial_image_url: null,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error creating project from pending prompt:", error);
+        setIsAutoCreating(false);
+        return;
+      }
+
+      // Navigate to the new project - auto-generation will kick in on the project page
+      router.push(`/home/projects/${data.id}`);
+    }
+
+    createFromPendingPrompt();
+  }, [isLoaded, user, isAutoCreating, getPendingPrompt, clearPendingPrompt, router]);
 
   // Create new project from prompt
   const handleCreateProject = async (prompt: string, platform: Platform, imageUrl: string | null, _model: ModelId) => {
@@ -568,8 +618,8 @@ export default function DashboardPage() {
     setProjects((prev) => prev.filter((p) => p.id !== projectId));
   };
 
-  // Loading state
-  if (!isLoaded || isLoading) {
+  // Loading state (also show skeleton while auto-creating from pending prompt)
+  if (!isLoaded || isLoading || isAutoCreating) {
     return <DashboardSkeleton />;
   }
 
