@@ -52,9 +52,13 @@ const HTML_CSS_RULES = `HTML/CSS RULES:
 - Include realistic placeholder content (names, dates, numbers, descriptions)`;
 
 const IMAGE_RULES = `IMAGES - USE REAL WORKING URLs:
-You MUST use real, working image URLs. Here are reliable sources:
+You have access to Google Search! Use it to find REAL image URLs for specific people, athletes, celebrities, logos, etc.
 
-1. **Pokemon/Game Characters** - Use PokeAPI sprites (ALWAYS use these for Pokemon):
+**For specific people/athletes/celebrities/brands:**
+Use Google Search to find their official photos! Search for "[name] official photo" or "[name] headshot" and use the real image URLs you find.
+Examples: NBA players, NFL players, celebrities, company logos, movie posters, etc.
+
+**For Pokemon/Game Characters** - Use PokeAPI sprites (ALWAYS use these for Pokemon):
    - https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png (Pikachu)
    - https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png (Bulbasaur)
    - https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/4.png (Charmander)
@@ -63,18 +67,18 @@ You MUST use real, working image URLs. Here are reliable sources:
    - https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/9.png (Blastoise)
    - Pokemon numbers: Bulbasaur=1, Charmander=4, Squirtle=7, Pikachu=25, etc.
 
-2. **Profile Avatars** - Use UI Avatars:
+**For Profile Avatars** - Use UI Avatars:
    - https://ui-avatars.com/api/?name=John+Doe&size=48&background=random
    - https://ui-avatars.com/api/?name=Sarah+Smith&size=64&background=6366f1&color=fff
 
-3. **General Photos** - Use Picsum with descriptive seeds:
+**For General Photos** - Use Picsum with descriptive seeds:
    - https://picsum.photos/seed/cooking/400/300 (food-related)
    - https://picsum.photos/seed/fitness/400/300 (fitness-related)
    - https://picsum.photos/seed/nature/400/300 (nature)
    - https://picsum.photos/seed/office/400/300 (business)
    - https://picsum.photos/seed/travel/400/300 (travel)
 
-4. **Colored Placeholders** - Use Placehold.co:
+**For Colored Placeholders** - Use Placehold.co:
    - https://placehold.co/400x300/orange/white?text=Recipe
    - https://placehold.co/200x200/3b82f6/white?text=Product
 

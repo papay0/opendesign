@@ -22,7 +22,7 @@
 
 import { streamText } from "ai";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createGoogleGenerativeAI, google as googleProvider } from "@ai-sdk/google";
 import { SYSTEM_PROMPTS, type Platform } from "@/lib/prompts/system-prompts";
 import { auth } from "@clerk/nextjs/server";
 import { createClient } from "@supabase/supabase-js";
@@ -137,7 +137,9 @@ export async function POST(request: Request): Promise<Response> {
     const userPlan = (dbUser.plan || "free") as PlanType;
     const modelToUse = requestedModel || "gemini-3-pro-preview";
 
-    if (!isModelAllowedForPlan(modelToUse, userPlan) && !isModelAllowedForPlan(`google/${modelToUse}`, userPlan)) {
+    // BYOK users can use any model since they pay their own API costs
+    // Only apply model restrictions to users using the platform key
+    if (!userApiKey && !isModelAllowedForPlan(modelToUse, userPlan) && !isModelAllowedForPlan(`google/${modelToUse}`, userPlan)) {
       return new Response(
         JSON.stringify({
           error: "This model is only available for Pro users. Please upgrade or use the Flash model.",
@@ -206,19 +208,23 @@ IMPORTANT:
 
     // Create the appropriate model based on provider
     let model;
+    let useGoogleSearch = false;
 
     if (provider === "gemini") {
-      // Direct Google Gemini API
+      // Direct Google Gemini API - can use Google Search grounding
       const google = createGoogleGenerativeAI({
         apiKey: apiKey,
       });
       model = google(selectedModel);
+      useGoogleSearch = true;
+      console.log("[Design Stream] Google Search grounding enabled (direct Gemini API)");
     } else {
-      // OpenRouter (default)
+      // OpenRouter (default) - cannot use Google Search grounding
       const openrouter = createOpenRouter({
         apiKey: apiKey,
       });
       model = openrouter.chat(`google/${selectedModel}`);
+      console.log("[Design Stream] Google Search grounding not available (OpenRouter)");
     }
 
     // Build messages array with support for multimodal content
@@ -276,11 +282,17 @@ IMPORTANT:
 
         try {
           // Use the AI SDK streaming with platform-specific prompt
+          // Add Google Search grounding when using direct Gemini API
           const result = streamText({
             model,
             system: systemPrompt,
             messages,
             temperature: 0.7,
+            ...(useGoogleSearch && {
+              tools: {
+                google_search: googleProvider.tools.googleSearch({}),
+              },
+            }),
           });
 
           // Stream the text response
