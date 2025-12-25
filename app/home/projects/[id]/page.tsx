@@ -974,7 +974,7 @@ export default function DesignPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-dvh">
       {/* Header */}
       <div className={`flex items-center border-b border-[#E8E4E0] bg-white ${
         isMobile ? "gap-2 px-3 py-3" : "gap-4 px-6 py-4"
