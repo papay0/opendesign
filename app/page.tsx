@@ -520,10 +520,11 @@ function UseCasesSection() {
 // ============================================================================
 
 function PricingSection() {
-  const [isAnnual, setIsAnnual] = useState(false);
+  const [isAnnual, setIsAnnual] = useState(true);
 
-  // For annual, give 2 months free (10/12 = ~17% discount)
-  const annualPrice = Math.round((PLANS.pro.price * 10) / 12);
+  // For annual, give 2 months free ($150/year = $12.50/month)
+  const annualTotal = PLANS.pro.price * 10; // $150/year
+  const annualPrice = annualTotal / 12; // $12.50/month
 
   return (
     <section id="pricing" className="py-24 px-6 bg-[#F5F2EF]" aria-label="Pricing Plans">
@@ -664,12 +665,12 @@ function PricingSection() {
 
             <div className="mb-6">
               <span className="text-4xl font-bold text-[#1A1A1A]">
-                ${isAnnual ? annualPrice : PLANS.pro.price}
+                ${isAnnual ? annualPrice.toFixed(2) : PLANS.pro.price}
               </span>
               <span className="text-[#6B6B6B] ml-1">/month</span>
               {isAnnual && (
                 <span className="ml-2 text-sm text-[#2E7D32]">
-                  (${PLANS.pro.price * 10}/year)
+                  (${annualTotal}/year)
                 </span>
               )}
             </div>

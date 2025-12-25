@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { createClient } from '@supabase/supabase-js';
-import { createCheckoutSession, getOrCreateCustomer, STRIPE_PRICES } from '@/lib/stripe';
+import { createCheckoutSession, getOrCreateCustomer, getProPriceId, type BillingInterval } from '@/lib/stripe';
 
 function getSupabaseAdmin() {
   return createClient(
@@ -17,6 +17,17 @@ export async function POST(req: NextRequest) {
 
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Parse billing interval from request body (defaults to monthly)
+    let interval: BillingInterval = 'monthly';
+    try {
+      const body = await req.json();
+      if (body.interval === 'annual') {
+        interval = 'annual';
+      }
+    } catch {
+      // No body or invalid JSON, use default
     }
 
     // Get user from database
@@ -59,10 +70,10 @@ export async function POST(req: NextRequest) {
     // Get the origin from the request
     const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-    // Create checkout session
+    // Create checkout session with the appropriate price
     const session = await createCheckoutSession({
       customerId,
-      priceId: STRIPE_PRICES.pro,
+      priceId: getProPriceId(interval),
       userId: user.id,
       successUrl: `${origin}/home?subscription=success`,
       cancelUrl: `${origin}/home?subscription=canceled`,

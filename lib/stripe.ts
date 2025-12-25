@@ -15,9 +15,18 @@ export const stripe = process.env.STRIPE_SECRET_KEY
 
 // Stripe price IDs from environment
 export const STRIPE_PRICES = {
-  pro: process.env.STRIPE_PRO_PRICE_ID || '',
+  proMonthly: process.env.STRIPE_PRO_PRICE_ID || '',
+  proAnnual: process.env.STRIPE_PRO_ANNUAL_PRICE_ID || '',
   messagePack: process.env.STRIPE_MESSAGES_PRICE_ID || '',
 };
+
+// Billing interval type
+export type BillingInterval = 'monthly' | 'annual';
+
+// Helper to get price ID by interval
+export function getProPriceId(interval: BillingInterval): string {
+  return interval === 'annual' ? STRIPE_PRICES.proAnnual : STRIPE_PRICES.proMonthly;
+}
 
 // Webhook secret for verifying Stripe events
 export const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';

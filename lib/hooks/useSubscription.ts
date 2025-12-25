@@ -5,6 +5,7 @@ import { useUser } from "@clerk/nextjs";
 import { createClient } from "@supabase/supabase-js";
 import type { User, Subscription } from "@/lib/supabase/types";
 import { PLANS, type PlanType } from "@/lib/constants/plans";
+import type { BillingInterval } from "@/lib/stripe";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -25,7 +26,7 @@ export interface UseSubscriptionReturn extends SubscriptionState {
   refresh: () => Promise<void>;
   decrementMessages: () => void;
   canUseModel: (model: string) => boolean;
-  upgradeToProUrl: () => Promise<string | null>;
+  upgradeToProUrl: (interval?: BillingInterval) => Promise<string | null>;
   purchaseMessagesUrl: () => Promise<string | null>;
   manageSubscriptionUrl: () => Promise<string | null>;
 }
@@ -131,10 +132,14 @@ export function useSubscription(): UseSubscriptionReturn {
   );
 
   // Get checkout URL for Pro upgrade
-  const upgradeToProUrl = useCallback(async (): Promise<string | null> => {
+  const upgradeToProUrl = useCallback(async (interval: BillingInterval = 'monthly'): Promise<string | null> => {
     try {
       const response = await fetch("/api/stripe/create-checkout", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ interval }),
       });
 
       if (!response.ok) {

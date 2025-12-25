@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Crown, Check, Zap, Sparkles } from "lucide-react";
 import { PLANS, MESSAGE_PACK } from "@/lib/constants/plans";
 import { useSubscription } from "@/lib/hooks/useSubscription";
+import type { BillingInterval } from "@/lib/stripe";
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -15,10 +16,15 @@ interface UpgradeModalProps {
 export function UpgradeModal({ isOpen, onClose, reason = "voluntary" }: UpgradeModalProps) {
   const { plan, upgradeToProUrl, purchaseMessagesUrl } = useSubscription();
   const [isLoading, setIsLoading] = useState<"pro" | "messages" | null>(null);
+  const [isAnnual, setIsAnnual] = useState(true);
+
+  const annualTotal = PLANS.pro.price * 10; // $150/year
+  const annualPrice = annualTotal / 12; // $12.50/month
 
   const handleUpgradeToPro = async () => {
     setIsLoading("pro");
-    const url = await upgradeToProUrl();
+    const interval: BillingInterval = isAnnual ? 'annual' : 'monthly';
+    const url = await upgradeToProUrl(interval);
     if (url) {
       window.location.href = url;
     }
@@ -87,6 +93,30 @@ export function UpgradeModal({ isOpen, onClose, reason = "voluntary" }: UpgradeM
 
               {/* Content */}
               <div className="p-6 space-y-4">
+                {/* Billing Toggle */}
+                {plan !== "pro" && (
+                  <div className="flex items-center justify-center gap-3 pb-2">
+                    <span className={`text-sm font-medium ${!isAnnual ? 'text-[#3D3A35]' : 'text-[#6B6459]'}`}>
+                      Monthly
+                    </span>
+                    <button
+                      onClick={() => setIsAnnual(!isAnnual)}
+                      className={`relative w-11 h-6 rounded-full transition-colors ${isAnnual ? 'bg-amber-500' : 'bg-[#E8E4DF]'}`}
+                    >
+                      <motion.div
+                        animate={{ x: isAnnual ? 22 : 2 }}
+                        className="absolute top-1 w-4 h-4 bg-white rounded-full shadow"
+                      />
+                    </button>
+                    <span className={`text-sm font-medium ${isAnnual ? 'text-[#3D3A35]' : 'text-[#6B6459]'}`}>
+                      Annual
+                      <span className="ml-1 text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">
+                        Save 17%
+                      </span>
+                    </span>
+                  </div>
+                )}
+
                 {/* Pro Plan Card */}
                 <motion.button
                   whileHover={{ scale: 1.02 }}
@@ -114,9 +144,11 @@ export function UpgradeModal({ isOpen, onClose, reason = "voluntary" }: UpgradeM
                     </div>
                     <div className="text-right">
                       <div className="text-xl font-bold text-[#3D3A35]">
-                        ${PLANS.pro.price}
+                        ${isAnnual ? annualPrice.toFixed(2) : PLANS.pro.price}
                       </div>
-                      <div className="text-xs text-[#6B6459]">/month</div>
+                      <div className="text-xs text-[#6B6459]">
+                        /month{isAnnual && ` ($${annualTotal}/yr)`}
+                      </div>
                     </div>
                   </div>
 

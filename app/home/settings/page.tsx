@@ -34,6 +34,7 @@ import { useSubscription } from "@/lib/hooks/useSubscription";
 import { useBYOK } from "@/lib/hooks/useBYOK";
 import { PLANS, MESSAGE_PACK } from "@/lib/constants/plans";
 import { SegmentedControl } from "@/app/home/components/SegmentedControl";
+import type { BillingInterval } from "@/lib/stripe";
 
 // ============================================================================
 // Types
@@ -169,7 +170,7 @@ function ProviderCard({
 }
 
 // ============================================================================
-// Component: Subscription Section
+// Component: Subscription Section (Warm Editorial Design)
 // ============================================================================
 
 function SubscriptionSection() {
@@ -186,21 +187,29 @@ function SubscriptionSection() {
   } = useSubscription();
 
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [billingChoice, setBillingChoice] = useState<BillingInterval>('annual');
 
-  const handleAction = async (action: "upgrade" | "purchase" | "manage") => {
+  const annualTotal = PLANS.pro.price * 10; // $150/year
+  const annualPrice = annualTotal / 12; // $12.50/month
+
+  const handleUpgrade = async (interval: BillingInterval) => {
+    setBillingChoice(interval);
+    setActionLoading("upgrade");
+    const url = await upgradeToProUrl(interval);
+    if (url) {
+      window.location.href = url;
+    }
+    setActionLoading(null);
+  };
+
+  const handleAction = async (action: "purchase" | "manage") => {
     setActionLoading(action);
     let url: string | null = null;
 
-    switch (action) {
-      case "upgrade":
-        url = await upgradeToProUrl();
-        break;
-      case "purchase":
-        url = await purchaseMessagesUrl();
-        break;
-      case "manage":
-        url = await manageSubscriptionUrl();
-        break;
+    if (action === "purchase") {
+      url = await purchaseMessagesUrl();
+    } else {
+      url = await manageSubscriptionUrl();
     }
 
     if (url) {
@@ -218,206 +227,331 @@ function SubscriptionSection() {
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div className="h-48 bg-[#F5F2EF] rounded-2xl animate-pulse" />
-        <div className="h-20 bg-[#F5F2EF] rounded-xl animate-pulse" />
+      <div className="space-y-8">
+        <div className="h-28 bg-gradient-to-br from-[#F5F2EF] to-[#E8E4E0] rounded-2xl animate-pulse" />
+        <div className="grid grid-cols-2 gap-6">
+          <div className="h-80 bg-[#F5F2EF] rounded-2xl animate-pulse" />
+          <div className="h-80 bg-[#F5F2EF] rounded-2xl animate-pulse" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-5">
-      {/* Current Plan Card */}
-      <div className="rounded-2xl border border-[#E8E4E0] overflow-hidden bg-white">
-        {/* Plan Header */}
-        <div className={`p-5 ${plan === "pro" ? "bg-gradient-to-br from-amber-500 to-orange-500 text-white" : "bg-gradient-to-br from-[#F5F2EF] to-[#E8E4E0]"}`}>
+    <div className="space-y-10">
+      {/* Status Banner - Warm Light Theme */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative overflow-hidden"
+      >
+        {/* Decorative background pattern */}
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-50 via-orange-50/50 to-transparent rounded-2xl" />
+        <div
+          className="absolute inset-0 opacity-[0.4]"
+          style={{
+            backgroundImage: `radial-gradient(circle at 2px 2px, #B8956F 1px, transparent 0)`,
+            backgroundSize: '24px 24px'
+          }}
+        />
+
+        <div className="relative p-6 rounded-2xl border border-amber-200/60">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={`p-2.5 rounded-xl ${plan === "pro" ? "bg-white/20" : "bg-white"}`}>
-                {plan === "pro" ? <Crown className="w-5 h-5" /> : <Zap className="w-5 h-5 text-[#6B6459]" />}
+            {/* Left - Plan Info */}
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center border border-amber-200/50">
+                  {plan === "pro" ? (
+                    <Crown className="w-7 h-7 text-amber-600" />
+                  ) : (
+                    <Zap className="w-7 h-7 text-amber-600" />
+                  )}
+                </div>
+                {plan === "pro" && (
+                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center">
+                    <Check className="w-3 h-3 text-white" />
+                  </div>
+                )}
               </div>
               <div>
-                <h3 className="font-semibold text-lg">{planConfig.name} Plan</h3>
-                <p className={`text-sm ${plan === "pro" ? "text-white/80" : "text-[#6B6459]"}`}>
-                  {plan === "pro" ? `$${planConfig.price}/month` : "Free forever"}
+                <p className="text-xs font-medium text-amber-700/70 uppercase tracking-wider mb-0.5">Your Plan</p>
+                <h3 className="text-2xl font-serif text-[#3D3A35]">{planConfig.name}</h3>
+              </div>
+            </div>
+
+            {/* Right - Usage Stats */}
+            <div className="flex items-center gap-8">
+              <div className="text-right">
+                <p className="text-xs text-[#9A9A9A] mb-1">Messages this month</p>
+                <div className="flex items-baseline gap-1.5 justify-end">
+                  <span className={`text-3xl font-bold ${messagesRemaining <= 0 ? 'text-red-500' : messagesRemaining <= messagesLimit * 0.2 ? 'text-amber-600' : 'text-[#3D3A35]'}`}>
+                    {messagesRemaining}
+                  </span>
+                  <span className="text-[#9A9A9A] text-lg">/ {messagesLimit}</span>
+                </div>
+              </div>
+
+              {/* Visual progress bar */}
+              <div className="w-32">
+                <div className="flex justify-between text-xs text-[#9A9A9A] mb-1.5">
+                  <span>Used</span>
+                  <span>{Math.round(usagePercent)}%</span>
+                </div>
+                <div className="h-2.5 bg-amber-100 rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${usagePercent}%` }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                    className={`h-full rounded-full ${
+                      messagesRemaining <= 0 ? 'bg-red-400' :
+                      messagesRemaining <= messagesLimit * 0.2 ? 'bg-amber-500' :
+                      'bg-gradient-to-r from-amber-400 to-orange-400'
+                    }`}
+                  />
+                </div>
+                <p className="text-xs text-[#9A9A9A] mt-1.5 flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  Resets in {daysUntilReset} days
                 </p>
               </div>
             </div>
-            {subscription && (
-              <button
-                onClick={() => handleAction("manage")}
-                disabled={actionLoading !== null}
-                className={`p-2 rounded-lg transition-colors ${plan === "pro" ? "hover:bg-white/10" : "hover:bg-white"}`}
-                title="Manage subscription"
-              >
-                {actionLoading === "manage" ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <CreditCard className="w-5 h-5" />
-                )}
-              </button>
-            )}
           </div>
         </div>
+      </motion.div>
 
-        {/* Usage Section */}
-        <div className="p-5 space-y-4">
-          {/* Usage Bar */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-[#6B6459]">Messages used</span>
-              <span className="font-medium text-[#1A1A1A]">{messagesLimit - messagesRemaining}/{messagesLimit}</span>
-            </div>
-            <div className="h-2.5 bg-[#E8E4DF] rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${usagePercent}%` }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-                className={`h-full rounded-full ${
-                  messagesRemaining <= 0 ? "bg-red-500" :
-                  messagesRemaining <= messagesLimit * 0.2 ? "bg-amber-500" :
-                  "bg-[#B8956F]"
-                }`}
-              />
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-[#9A9A9A]">
-              <Calendar className="w-3.5 h-3.5" />
-              <span>Resets in {daysUntilReset} days</span>
-            </div>
+      {/* Upgrade Section - For Free Users */}
+      {plan === "free" && (
+        <div className="space-y-8">
+          {/* Marketing Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="text-center max-w-lg mx-auto"
+          >
+            <h2 className="font-serif text-3xl text-[#3D3A35] mb-3">
+              Unlock Your Creative Potential
+            </h2>
+            <p className="text-[#6B6459] text-lg">
+              Join thousands of designers creating with Pro
+            </p>
+          </motion.div>
+
+          {/* Equal Height Pricing Cards */}
+          <div className="grid grid-cols-2 gap-6">
+            {/* Monthly Card */}
+            <motion.button
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              whileHover={{ y: -4, boxShadow: '0 20px 40px -12px rgba(184, 149, 111, 0.15)' }}
+              onClick={() => handleUpgrade('monthly')}
+              disabled={actionLoading !== null}
+              className="relative text-left rounded-2xl border-2 border-[#E8E4E0] bg-white p-6 transition-all disabled:opacity-50 group h-full flex flex-col"
+            >
+              {/* Card Content */}
+              <div className="flex-1">
+                <p className="text-xs font-semibold text-[#9A9A9A] uppercase tracking-wider mb-4">Monthly</p>
+
+                <div className="mb-6">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-5xl font-bold text-[#3D3A35]">${PLANS.pro.price}</span>
+                    <span className="text-xl text-[#9A9A9A]">/mo</span>
+                  </div>
+                  <p className="text-sm text-[#9A9A9A] mt-1">Billed monthly</p>
+                </div>
+
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center gap-3 text-[#6B6459]">
+                    <div className="w-5 h-5 rounded-full bg-[#F5F2EF] flex items-center justify-center flex-shrink-0">
+                      <Check className="w-3 h-3 text-[#B8956F]" />
+                    </div>
+                    <span>50 AI generations/month</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-[#6B6459]">
+                    <div className="w-5 h-5 rounded-full bg-[#F5F2EF] flex items-center justify-center flex-shrink-0">
+                      <Check className="w-3 h-3 text-[#B8956F]" />
+                    </div>
+                    <span>Flash + Pro models</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-[#6B6459]">
+                    <div className="w-5 h-5 rounded-full bg-[#F5F2EF] flex items-center justify-center flex-shrink-0">
+                      <Check className="w-3 h-3 text-[#B8956F]" />
+                    </div>
+                    <span>Cancel anytime</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-[#6B6459]">
+                    <div className="w-5 h-5 rounded-full bg-[#F5F2EF] flex items-center justify-center flex-shrink-0">
+                      <Check className="w-3 h-3 text-[#B8956F]" />
+                    </div>
+                    <span>Code export</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* CTA Button */}
+              <div className="w-full py-3.5 border-2 border-[#E8E4DF] text-[#3D3A35] text-center rounded-xl font-semibold group-hover:border-[#B8956F] group-hover:bg-[#B8956F]/5 transition-all">
+                {actionLoading === "upgrade" && billingChoice === 'monthly' ? (
+                  <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                ) : (
+                  "Choose Monthly"
+                )}
+              </div>
+            </motion.button>
+
+            {/* Annual Card - Highlighted */}
+            <motion.button
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              whileHover={{ y: -4, boxShadow: '0 25px 50px -12px rgba(245, 158, 11, 0.25)' }}
+              onClick={() => handleUpgrade('annual')}
+              disabled={actionLoading !== null}
+              className="relative text-left rounded-2xl p-6 transition-all disabled:opacity-50 group h-full flex flex-col bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100 border-2 border-amber-200"
+            >
+              {/* Best Value Badge */}
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10">
+                <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-5 py-1.5 rounded-full shadow-lg shadow-amber-500/30 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  BEST VALUE
+                </div>
+              </div>
+
+              {/* Card Content */}
+              <div className="flex-1 mt-2">
+                <p className="text-xs font-semibold text-amber-700/70 uppercase tracking-wider mb-4">Annual</p>
+
+                <div className="mb-6">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-5xl font-bold text-[#3D3A35]">${annualPrice.toFixed(2)}</span>
+                    <span className="text-xl text-[#6B6459]">/mo</span>
+                  </div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-sm text-[#6B6459]">${annualTotal}/year</span>
+                    <span className="bg-green-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                      Save $30
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center gap-3 text-[#3D3A35]">
+                    <div className="w-5 h-5 rounded-full bg-amber-200/60 flex items-center justify-center flex-shrink-0">
+                      <Check className="w-3 h-3 text-amber-700" />
+                    </div>
+                    <span className="font-medium">50 AI generations/month</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-[#3D3A35]">
+                    <div className="w-5 h-5 rounded-full bg-amber-200/60 flex items-center justify-center flex-shrink-0">
+                      <Check className="w-3 h-3 text-amber-700" />
+                    </div>
+                    <span className="font-medium">Flash + Pro models</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-[#3D3A35]">
+                    <div className="w-5 h-5 rounded-full bg-amber-200/60 flex items-center justify-center flex-shrink-0">
+                      <Check className="w-3 h-3 text-amber-700" />
+                    </div>
+                    <span className="font-medium">2 months FREE</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-[#3D3A35]">
+                    <div className="w-5 h-5 rounded-full bg-amber-200/60 flex items-center justify-center flex-shrink-0">
+                      <Check className="w-3 h-3 text-amber-700" />
+                    </div>
+                    <span className="font-medium">Priority support</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* CTA Button */}
+              <div className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-center rounded-xl font-semibold shadow-lg shadow-amber-500/25 group-hover:shadow-xl group-hover:shadow-amber-500/35 transition-all">
+                {actionLoading === "upgrade" && billingChoice === 'annual' ? (
+                  <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                ) : (
+                  <span className="flex items-center justify-center gap-2">
+                    Get 2 Months Free
+                    <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                  </span>
+                )}
+              </div>
+            </motion.button>
           </div>
 
-          {/* Low messages warning */}
-          {messagesRemaining <= messagesLimit * 0.2 && messagesRemaining > 0 && (
-            <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-              <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
-              <p className="text-sm text-amber-700">Running low on messages</p>
-            </div>
-          )}
-
-          {/* No messages warning */}
-          {messagesRemaining <= 0 && (
-            <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl">
-              <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
-              <p className="text-sm text-red-700">No messages remaining</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Action Card */}
-      <div className="rounded-xl border border-[#E8E4E0] bg-white p-4">
-        {plan === "free" ? (
-          <button
-            onClick={() => handleAction("upgrade")}
-            disabled={actionLoading !== null}
-            className="w-full flex items-center justify-between p-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-xl transition-colors disabled:opacity-50"
+          {/* Trust Signal */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="text-center text-sm text-[#9A9A9A]"
           >
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-white/20 rounded-lg">
-                {actionLoading === "upgrade" ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Crown className="w-4 h-4" />
-                )}
-              </div>
-              <div className="text-left">
-                <p className="font-medium">
-                  {actionLoading === "upgrade" ? "Loading..." : "Upgrade to Pro"}
-                </p>
-                <p className="text-xs text-white/80">${PLANS.pro.price}/mo - 50 messages</p>
-              </div>
-            </div>
-            {actionLoading === "upgrade" ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <ChevronRight className="w-5 h-5" />
-            )}
-          </button>
-        ) : (
-          <button
-            onClick={() => handleAction("purchase")}
-            disabled={actionLoading !== null}
-            className="w-full flex items-center justify-between p-3 border border-[#E8E4DF] hover:bg-[#F5F2EF] rounded-xl transition-colors disabled:opacity-50"
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-[#F5F2EF] rounded-lg">
-                {actionLoading === "purchase" ? (
-                  <Loader2 className="w-4 h-4 text-[#B8956F] animate-spin" />
-                ) : (
-                  <Zap className="w-4 h-4 text-[#B8956F]" />
-                )}
-              </div>
-              <div className="text-left">
-                <p className="font-medium text-[#1A1A1A]">
-                  {actionLoading === "purchase" ? "Loading..." : "Buy More Messages"}
-                </p>
-                <p className="text-xs text-[#6B6459]">+{MESSAGE_PACK.messages} messages for ${MESSAGE_PACK.priceUsd}</p>
-              </div>
-            </div>
-            {actionLoading === "purchase" ? (
-              <Loader2 className="w-5 h-5 text-[#9A9A9A] animate-spin" />
-            ) : (
-              <ChevronRight className="w-5 h-5 text-[#9A9A9A]" />
-            )}
-          </button>
-        )}
-
-        {/* Manage Subscription button - shows for Pro users */}
-        {plan === "pro" && (
-          <button
-            onClick={() => handleAction("manage")}
-            disabled={actionLoading !== null}
-            className="w-full flex items-center justify-between p-3 border border-[#E8E4DF] hover:bg-[#F5F2EF] rounded-xl transition-colors disabled:opacity-50 mt-3"
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-[#F5F2EF] rounded-lg">
-                {actionLoading === "manage" ? (
-                  <Loader2 className="w-4 h-4 text-[#B8956F] animate-spin" />
-                ) : (
-                  <CreditCard className="w-4 h-4 text-[#B8956F]" />
-                )}
-              </div>
-              <div className="text-left">
-                <p className="font-medium text-[#1A1A1A]">
-                  {actionLoading === "manage" ? "Loading..." : "Manage Subscription"}
-                </p>
-                <p className="text-xs text-[#6B6459]">Update payment, cancel, or view invoices</p>
-              </div>
-            </div>
-            {actionLoading === "manage" ? (
-              <Loader2 className="w-5 h-5 text-[#9A9A9A] animate-spin" />
-            ) : (
-              <ChevronRight className="w-5 h-5 text-[#9A9A9A]" />
-            )}
-          </button>
-        )}
-      </div>
-
-      {/* Subscription Status */}
-      {subscription && (
-        <div className="flex items-center justify-center gap-2 text-sm text-[#6B6459]">
-          <Calendar className="w-4 h-4" />
-          <span>
-            {subscription.cancel_at_period_end ? "Ends" : "Renews"}:{" "}
-            {subscription.current_period_end
-              ? new Date(subscription.current_period_end).toLocaleDateString()
-              : "N/A"}
-          </span>
+            <Shield className="w-4 h-4 inline mr-1.5 -mt-0.5" />
+            Secure payment via Stripe • Cancel anytime
+          </motion.p>
         </div>
       )}
 
-      {/* Features List */}
-      <div className="rounded-xl bg-[#F5F2EF]/50 border border-[#E8E4E0] p-4">
-        <h4 className="text-sm font-medium text-[#1A1A1A] mb-3">Your plan includes:</h4>
-        <ul className="space-y-2">
-          {planConfig.features.map((feature, i) => (
-            <li key={i} className="flex items-center gap-2 text-sm text-[#6B6459]">
-              <Check className="w-4 h-4 text-[#B8956F] flex-shrink-0" />
-              {feature}
-            </li>
-          ))}
-        </ul>
-      </div>
+      {/* Pro User Actions */}
+      {plan === "pro" && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="grid grid-cols-2 gap-4"
+        >
+          <button
+            onClick={() => handleAction("purchase")}
+            disabled={actionLoading !== null}
+            className="flex items-center gap-4 p-5 bg-white border border-[#E8E4DF] hover:border-[#B8956F] rounded-xl transition-all disabled:opacity-50 group"
+          >
+            <div className="p-3 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl border border-amber-100">
+              {actionLoading === "purchase" ? (
+                <Loader2 className="w-5 h-5 text-amber-600 animate-spin" />
+              ) : (
+                <Zap className="w-5 h-5 text-amber-600" />
+              )}
+            </div>
+            <div className="text-left flex-1">
+              <p className="font-semibold text-[#3D3A35]">Buy More Messages</p>
+              <p className="text-sm text-[#9A9A9A]">+{MESSAGE_PACK.messages} for ${MESSAGE_PACK.priceUsd}</p>
+            </div>
+            <ChevronRight className="w-5 h-5 text-[#9A9A9A] group-hover:translate-x-1 transition-transform" />
+          </button>
+
+          <button
+            onClick={() => handleAction("manage")}
+            disabled={actionLoading !== null}
+            className="flex items-center gap-4 p-5 bg-white border border-[#E8E4DF] hover:border-[#B8956F] rounded-xl transition-all disabled:opacity-50 group"
+          >
+            <div className="p-3 bg-gradient-to-br from-[#F5F2EF] to-[#E8E4E0] rounded-xl border border-[#E8E4DF]">
+              {actionLoading === "manage" ? (
+                <Loader2 className="w-5 h-5 text-[#6B6459] animate-spin" />
+              ) : (
+                <CreditCard className="w-5 h-5 text-[#6B6459]" />
+              )}
+            </div>
+            <div className="text-left flex-1">
+              <p className="font-semibold text-[#3D3A35]">Manage Subscription</p>
+              <p className="text-sm text-[#9A9A9A]">Payment, invoices & more</p>
+            </div>
+            <ChevronRight className="w-5 h-5 text-[#9A9A9A] group-hover:translate-x-1 transition-transform" />
+          </button>
+        </motion.div>
+      )}
+
+      {/* Subscription Status for Pro users */}
+      {plan === "pro" && subscription && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex items-center justify-center gap-2 text-sm text-[#9A9A9A] pt-2"
+        >
+          <Calendar className="w-4 h-4" />
+          <span>
+            {subscription.cancel_at_period_end ? "Access ends" : "Renews"} on{" "}
+            {subscription.current_period_end
+              ? new Date(subscription.current_period_end).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+              : "N/A"}
+          </span>
+        </motion.div>
+      )}
     </div>
   );
 }
@@ -739,7 +873,7 @@ export default function SettingsPage() {
   // Show loading skeleton while initializing
   if (!isInitialized || activeSection === null) {
     return (
-      <div className="max-w-lg mx-auto px-5 py-8">
+      <div className="max-w-3xl mx-auto px-5 py-8">
         {/* Header */}
         <div className="mb-6">
           <h1 className="font-serif text-3xl text-[#1A1A1A] mb-1">Settings</h1>
@@ -764,7 +898,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-lg mx-auto px-5 py-8">
+    <div className="max-w-3xl mx-auto px-5 py-8">
       {/* Header */}
       <div className="mb-6">
         <h1 className="font-serif text-3xl text-[#1A1A1A] mb-1">Settings</h1>
