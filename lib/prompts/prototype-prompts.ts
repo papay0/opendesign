@@ -177,12 +177,14 @@ const PERSONALIZATION_RULES = `USER PERSONALIZATION:
 - If no name provided, use generic names like "Alex" or "You"`;
 
 const REMEMBER_RULES = `REMEMBER:
-- Be brief with messages - focus on the visual design
 - Make every screen feel polished and complete
 - Use consistent styling across all screens
 - Include realistic, engaging placeholder content
-- Use PRESENT CONTINUOUS tense in messages (e.g., "I'm creating...", "Now designing...")
-- ALWAYS end with a final <!-- MESSAGE: ... --> summarizing what you created
+- Use PRESENT CONTINUOUS tense in messages (e.g., "I'm creating...", "Now designing...") since screens stream in real-time
+- NEVER use past tense like "I've designed" or "I created" - the user sees screens being built live
+- Be DESCRIPTIVE in your messages - explain what design elements you're including (e.g., "Now creating the immersive activity detail screen with route map visualization, heart rate analytics, and glassmorphic stat cards")
+- Output a MESSAGE before EACH new screen explaining what you're building
+- ALWAYS end with a final <!-- MESSAGE: ... --> summarizing what you created and inviting follow-up requests
 - ALWAYS include navigation between related screens using data-flow attributes
 - Mark ONE screen as [ROOT] - this is where users start when viewing the prototype`;
 
@@ -222,7 +224,7 @@ MOBILE-SPECIFIC GUIDELINES:
 const MOBILE_PROTOTYPE_EXAMPLE = `EXAMPLE OUTPUT:
 <!-- PROJECT_NAME: Recipe Book -->
 <!-- PROJECT_ICON: 🍳 -->
-<!-- MESSAGE: I'm creating an interactive recipe app with navigation! -->
+<!-- MESSAGE: I'm creating a warm, appetizing recipe app with a card-based home feed, smooth navigation, and a cozy orange color palette! Starting with the home screen featuring recipe cards with rich imagery. -->
 <!-- SCREEN_START: Home [0,0] [ROOT] -->
 <div class="h-screen flex flex-col bg-gradient-to-b from-orange-50 to-white">
   <header class="shrink-0 pt-14 px-6 pb-4">
@@ -244,7 +246,7 @@ const MOBILE_PROTOTYPE_EXAMPLE = `EXAMPLE OUTPUT:
   </nav>
 </div>
 <!-- SCREEN_END -->
-<!-- MESSAGE: Now creating the recipe detail screen to the right... -->
+<!-- MESSAGE: Now creating the recipe detail screen with a hero image, ingredient list, and step-by-step instructions. Adding a back navigation to return to the home feed. -->
 <!-- SCREEN_START: Pasta Recipe [1,0] -->
 <div class="h-screen flex flex-col bg-white">
   <header class="shrink-0 pt-14 px-6 pb-4 flex items-center gap-4">
@@ -268,7 +270,7 @@ const MOBILE_PROTOTYPE_EXAMPLE = `EXAMPLE OUTPUT:
   </main>
 </div>
 <!-- SCREEN_END -->
-<!-- MESSAGE: Created 2 connected screens! Tap the pasta card to navigate to the detail view. -->`;
+<!-- MESSAGE: I've built a 2-screen interactive recipe app! Tap the pasta card on the home screen to navigate to the detail view with the back button. Want me to add a favorites screen or cooking timer functionality? -->`;
 
 // ============================================================================
 // DESKTOP PROTOTYPE PROMPTS
@@ -314,7 +316,7 @@ DESKTOP-SPECIFIC GUIDELINES:
 const DESKTOP_PROTOTYPE_EXAMPLE = `EXAMPLE OUTPUT:
 <!-- PROJECT_NAME: TechFlow -->
 <!-- PROJECT_ICON: 💼 -->
-<!-- MESSAGE: I'm creating an interactive SaaS website with full navigation! -->
+<!-- MESSAGE: I'm creating a modern SaaS landing page with a clean indigo color scheme, glassmorphic navigation bar, and compelling hero section! Starting with the home page featuring a bold headline and clear call-to-action. -->
 <!-- SCREEN_START: Home [0,0] [ROOT] -->
 <div class="h-screen flex flex-col bg-gradient-to-b from-slate-50 to-white">
   <header class="shrink-0 h-16 bg-white/80 backdrop-blur-md border-b px-8 flex items-center justify-between">
@@ -336,7 +338,7 @@ const DESKTOP_PROTOTYPE_EXAMPLE = `EXAMPLE OUTPUT:
   </main>
 </div>
 <!-- SCREEN_END -->
-<!-- MESSAGE: Now creating the pricing page to the right... -->
+<!-- MESSAGE: Now building the pricing page with a two-column comparison layout, featuring a highlighted "Popular" tier and clear pricing cards with hover states. -->
 <!-- SCREEN_START: Pricing [1,0] -->
 <div class="h-screen flex flex-col bg-white">
   <header class="shrink-0 h-16 bg-white border-b px-8 flex items-center justify-between">
@@ -369,7 +371,7 @@ const DESKTOP_PROTOTYPE_EXAMPLE = `EXAMPLE OUTPUT:
   </main>
 </div>
 <!-- SCREEN_END -->
-<!-- MESSAGE: Created 2 connected screens! Click navigation links to move between pages. -->`;
+<!-- MESSAGE: I've created a 2-page interactive SaaS website with full navigation! Click the nav links to move between Home and Pricing. Want me to add a Features page or a signup form? -->`;
 
 // ============================================================================
 // OUTPUT RULES
