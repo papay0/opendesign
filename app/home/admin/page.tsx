@@ -25,7 +25,6 @@ import {
   ArrowDownRight,
   Calendar,
   Layers,
-  ArrowLeft,
   Loader2,
   ShieldAlert,
   Activity,
@@ -36,9 +35,6 @@ import { createClient } from "@/lib/supabase/client";
 import { useUserSync } from "@/lib/hooks/useUserSync";
 import { formatCost, formatTokens } from "@/lib/constants/pricing";
 import type { UsageLog } from "@/lib/supabase/types";
-import { CostEstimator } from "./components/CostEstimator";
-import { ScenarioPlanning } from "./components/ScenarioPlanning";
-import { UserManagement } from "./components/UserManagement";
 
 // ============================================================================
 // Types
@@ -583,14 +579,6 @@ export default function AdminDashboard() {
         transition={{ duration: 0.5 }}
         className="mb-8"
       >
-        <Link
-          href="/home"
-          className="inline-flex items-center gap-2 text-sm text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors mb-4"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Dashboard
-        </Link>
-
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-[#1A1A1A] tracking-tight">
@@ -600,22 +588,9 @@ export default function AdminDashboard() {
               AI generation costs and usage insights
             </p>
           </div>
-          <div className="flex items-center gap-4">
-            <ModelFilterControl value={modelFilter} onChange={setModelFilter} />
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-[#B8956F]/10 rounded-full">
-              <div className="w-2 h-2 rounded-full bg-[#B8956F] animate-pulse" />
-              <span className="text-xs font-medium text-[#B8956F]">
-                Admin Access
-              </span>
-            </div>
-          </div>
+          <ModelFilterControl value={modelFilter} onChange={setModelFilter} />
         </div>
       </motion.div>
-
-      {/* User Management Section */}
-      <div className="mb-8">
-        <UserManagement />
-      </div>
 
       {/* Main Metrics Grid */}
       <motion.div
@@ -928,39 +903,6 @@ export default function AdminDashboard() {
         </div>
       </motion.div>
 
-      {/* Business Analytics Section */}
-      <div className="space-y-8">
-        <h2 className="text-xl font-semibold text-[#1A1A1A] flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-[#B8956F]" />
-          Business Analytics
-        </h2>
-
-        {/* Cost Estimator */}
-        <CostEstimator
-          actualAvgCostFlash={
-            metrics.modelStats.find((m) => m.model.includes("flash"))?.avgCostPerGen ||
-            0.026
-          }
-          actualAvgCostPro={
-            metrics.modelStats.find((m) => m.model.includes("pro"))?.avgCostPerGen ||
-            0.135
-          }
-        />
-
-        {/* Scenario Planning */}
-        <ScenarioPlanning
-          currentUsers={uniqueUsers}
-          currentProUsers={Math.round(uniqueUsers * 0.1)} // Estimate 10% Pro
-          avgCostFlash={
-            metrics.modelStats.find((m) => m.model.includes("flash"))?.avgCostPerGen ||
-            0.026
-          }
-          avgCostPro={
-            metrics.modelStats.find((m) => m.model.includes("pro"))?.avgCostPerGen ||
-            0.135
-          }
-        />
-      </div>
     </div>
   );
 }

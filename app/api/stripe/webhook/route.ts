@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stripe, STRIPE_WEBHOOK_SECRET } from '@/lib/stripe';
 import { createClient } from '@supabase/supabase-js';
 import { PLANS } from '@/lib/constants/plans';
+import { logAuditEvent } from '@/lib/audit/log-event';
 import type Stripe from 'stripe';
 
 // Lazy initialization to avoid build-time errors
@@ -109,6 +110,29 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   if (userError) {
     console.error('Error updating user:', userError);
   }
+
+  // Determine billing interval from subscription
+  const subscriptionId = session.subscription as string | null;
+  let interval: 'monthly' | 'annual' = 'monthly';
+  if (subscriptionId && stripe) {
+    try {
+      const sub = await stripe.subscriptions.retrieve(subscriptionId);
+      interval = sub.items.data[0]?.price.recurring?.interval === 'year' ? 'annual' : 'monthly';
+    } catch {
+      // Default to monthly if we can't fetch
+    }
+  }
+
+  // Log subscription created
+  await logAuditEvent({
+    userId,
+    eventType: 'SUBSCRIPTION_CREATED',
+    metadata: {
+      plan: 'pro',
+      interval,
+      stripeSubscriptionId: subscriptionId || '',
+    },
+  });
 }
 
 async function handleMessagePackPurchase(userId: string, session: Stripe.Checkout.Session) {
@@ -152,6 +176,17 @@ async function handleMessagePackPurchase(userId: string, session: Stripe.Checkou
   if (purchaseError) {
     console.error('Error recording message purchase:', purchaseError);
   }
+
+  // Log message pack purchase
+  await logAuditEvent({
+    userId,
+    eventType: 'MESSAGE_PACK_PURCHASED',
+    metadata: {
+      messagesAdded: messagesToAdd,
+      amountCents: 500,
+      paymentIntentId: session.payment_intent as string,
+    },
+  });
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
@@ -265,6 +300,17 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   if (userError) {
     console.error('Error downgrading user:', userError);
   }
+
+  // Log subscription canceled
+  await logAuditEvent({
+    userId: user.id,
+    eventType: 'SUBSCRIPTION_CANCELED',
+    metadata: {
+      stripeSubscriptionId: subscription.id,
+      cancelAtPeriodEnd: false,
+      reason: 'deleted',
+    },
+  });
 }
 
 async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
@@ -308,6 +354,17 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
       console.error('Error resetting monthly messages:', error);
     }
   }
+
+  // Log payment succeeded
+  await logAuditEvent({
+    userId: user.id,
+    eventType: 'PAYMENT_SUCCEEDED',
+    metadata: {
+      amountCents: invoice.amount_paid || 0,
+      currency: invoice.currency || 'usd',
+      invoiceId: invoice.id,
+    },
+  });
 }
 
 async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
@@ -337,4 +394,16 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
   if (error) {
     console.error('Error updating subscription status to past_due:', error);
   }
+
+  // Log payment failed
+  await logAuditEvent({
+    userId: user.id,
+    eventType: 'PAYMENT_FAILED',
+    metadata: {
+      amountCents: invoice.amount_due || 0,
+      currency: invoice.currency || 'usd',
+      failureReason: invoice.last_finalization_error?.message,
+      invoiceId: invoice.id,
+    },
+  });
 }

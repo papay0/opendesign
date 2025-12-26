@@ -363,6 +363,48 @@ export interface Database {
           }
         ]
       }
+
+      /**
+       * Audit logs table - tracks important user events for debugging
+       */
+      audit_logs: {
+        Row: {
+          id: string
+          user_id: string | null           // Foreign key to users (nullable for deleted users)
+          event_type: string               // Event type from AUDIT_EVENT_TYPES
+          metadata: Record<string, unknown> // Event-specific metadata
+          ip_address: string | null        // Client IP address
+          user_agent: string | null        // Client user agent
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          event_type: string
+          metadata?: Record<string, unknown>
+          ip_address?: string | null
+          user_agent?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          event_type?: string
+          metadata?: Record<string, unknown>
+          ip_address?: string | null
+          user_agent?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -431,3 +473,10 @@ export type MessagePurchase = Database['public']['Tables']['message_purchases'][
 export type MessagePurchaseInsert = Database['public']['Tables']['message_purchases']['Insert']
 /** Message purchase update type */
 export type MessagePurchaseUpdate = Database['public']['Tables']['message_purchases']['Update']
+
+/** Audit log row type */
+export type AuditLogRow = Database['public']['Tables']['audit_logs']['Row']
+/** Audit log insert type */
+export type AuditLogInsert = Database['public']['Tables']['audit_logs']['Insert']
+/** Audit log update type */
+export type AuditLogUpdate = Database['public']['Tables']['audit_logs']['Update']

@@ -7,6 +7,7 @@
  * - Creates user record on first sign-in
  * - Updates last_sign_in_at on subsequent visits (throttled to 5 min)
  * - Increments sign_in_count only on new sessions
+ * - Logs audit events for sign-ins and user creation
  *
  * Uses localStorage for throttling to persist across tabs.
  */
@@ -16,9 +17,31 @@ import { useUser } from "@clerk/nextjs";
 import posthog from "posthog-js";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@/lib/supabase/types";
+import { AUDIT_EVENT_TYPES, type AuditEventType } from "@/lib/audit/types";
 
-const SYNC_KEY = "opendesign_last_sync";
-const THROTTLE_MS = 5 * 60 * 1000; // 5 minutes
+/**
+ * Log an audit event via the server API
+ * Fire-and-forget, doesn't block the sync flow
+ */
+async function logAuditEventClient(
+  eventType: AuditEventType,
+  metadata?: Record<string, unknown>
+): Promise<void> {
+  try {
+    await fetch("/api/audit/log-event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ eventType, metadata }),
+    });
+  } catch {
+    // Silent fail - audit logging shouldn't break user flow
+    console.debug("[Audit] Failed to log event:", eventType);
+  }
+}
+
+// Track if user was previously signed out (null) in this session
+// This helps detect actual sign-in events vs page refreshes
+let wasSignedOut = true; // Start true so first load counts as sign-in
 
 interface UseUserSyncResult {
   dbUser: User | null;
@@ -33,28 +56,29 @@ export function useUserSync(): UseUserSyncResult {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [isSynced, setIsSynced] = useState(false);
-  const syncAttempted = useRef(false);
+  const lastUserId = useRef<string | null>(null);
 
   useEffect(() => {
     // Wait for Clerk to load
     if (!isLoaded) return;
 
-    // No user logged in
+    // No user logged in - mark as signed out and reset state
     if (!user) {
+      wasSignedOut = true;
       setIsLoading(false);
+      setDbUser(null);
+      setIsSynced(false);
+      lastUserId.current = null;
       return;
     }
 
-    // Prevent duplicate sync attempts in same render cycle
-    if (syncAttempted.current) return;
-    syncAttempted.current = true;
+    // Prevent duplicate sync for same user in same render cycle
+    if (lastUserId.current === user.id) return;
+    lastUserId.current = user.id;
 
-    // Check throttle - only update if 5+ minutes since last sync
-    const lastSyncStr = localStorage.getItem(SYNC_KEY);
-    const lastSync = lastSyncStr ? JSON.parse(lastSyncStr) : null;
-    const now = Date.now();
-    const isNewSession = !lastSync || lastSync.userId !== user.id;
-    const shouldUpdate = isNewSession || now - lastSync.timestamp > THROTTLE_MS;
+    // Detect if this is an actual sign-in (user was previously signed out)
+    const isActualSignIn = wasSignedOut;
+    wasSignedOut = false; // Mark as signed in now
 
     async function syncUser() {
       const supabase = createClient();
@@ -73,50 +97,44 @@ export function useUserSync(): UseUserSyncResult {
         }
 
         if (existingUser) {
-          if (shouldUpdate) {
-            // Update last_sign_in_at (and increment count only on new session)
-            const { data: updatedUser, error: updateError } = await supabase
-              .from("users")
-              .update({
-                last_sign_in_at: new Date().toISOString(),
-                ...(isNewSession && {
-                  sign_in_count: existingUser.sign_in_count + 1,
-                }),
-                // Also update profile data in case it changed in Clerk
-                email:
-                  user!.emailAddresses[0]?.emailAddress || existingUser.email,
-                name:
-                  [user!.firstName, user!.lastName].filter(Boolean).join(" ") ||
-                  existingUser.name,
-                avatar_url: user!.imageUrl || existingUser.avatar_url,
-              })
-              .eq("clerk_id", user!.id)
-              .select()
-              .single();
+          // Update user data (always sync profile, increment count only on actual sign-in)
+          const { data: updatedUser, error: updateError } = await supabase
+            .from("users")
+            .update({
+              last_sign_in_at: new Date().toISOString(),
+              ...(isActualSignIn && {
+                sign_in_count: existingUser.sign_in_count + 1,
+              }),
+              // Also update profile data in case it changed in Clerk
+              email:
+                user!.emailAddresses[0]?.emailAddress || existingUser.email,
+              name:
+                [user!.firstName, user!.lastName].filter(Boolean).join(" ") ||
+                existingUser.name,
+              avatar_url: user!.imageUrl || existingUser.avatar_url,
+            })
+            .eq("clerk_id", user!.id)
+            .select()
+            .single();
 
-            if (updateError) throw updateError;
-            setDbUser(updatedUser);
+          if (updateError) throw updateError;
+          setDbUser(updatedUser);
 
-            // Track sign-in and update PostHog person properties
-            if (isNewSession) {
-              posthog.capture("user_signed_in", {
-                sign_in_count: updatedUser.sign_in_count,
-              });
-            }
-            posthog.people.set({
-              plan: updatedUser.plan,
-              messages_remaining: updatedUser.messages_remaining,
+          // Track sign-in events (only on actual sign-in, not page refresh)
+          if (isActualSignIn) {
+            posthog.capture("user_signed_in", {
               sign_in_count: updatedUser.sign_in_count,
             });
-          } else {
-            setDbUser(existingUser);
-            // Update PostHog person properties even when not syncing
-            posthog.people.set({
-              plan: existingUser.plan,
-              messages_remaining: existingUser.messages_remaining,
-              sign_in_count: existingUser.sign_in_count,
+            logAuditEventClient(AUDIT_EVENT_TYPES.USER_SIGNED_IN, {
+              signInCount: updatedUser.sign_in_count,
             });
           }
+
+          posthog.people.set({
+            plan: updatedUser.plan,
+            messages_remaining: updatedUser.messages_remaining,
+            sign_in_count: updatedUser.sign_in_count,
+          });
         } else {
           // New user - create record
           const { data: newUser, error: insertError } = await supabase
@@ -147,14 +165,12 @@ export function useUserSync(): UseUserSyncResult {
             messages_remaining: newUser.messages_remaining,
             sign_in_count: 1,
           });
-        }
 
-        // Update throttle timestamp
-        if (shouldUpdate) {
-          localStorage.setItem(
-            SYNC_KEY,
-            JSON.stringify({ userId: user!.id, timestamp: now })
-          );
+          // Log audit event for new user creation
+          logAuditEventClient(AUDIT_EVENT_TYPES.USER_CREATED, {
+            email: newUser.email,
+            plan: newUser.plan,
+          });
         }
         setIsSynced(true);
       } catch (err) {

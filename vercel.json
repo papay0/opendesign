@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/reset-messages",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}

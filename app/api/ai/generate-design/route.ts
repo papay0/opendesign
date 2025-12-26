@@ -26,7 +26,8 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { getSystemPrompt, type Platform } from "@/lib/prompts/system-prompts";
 import { auth } from "@clerk/nextjs/server";
 import { createClient } from "@supabase/supabase-js";
-import { isModelAllowedForPlan, type PlanType } from "@/lib/constants/plans";
+import { isModelAllowedForPlan, PLANS, type PlanType } from "@/lib/constants/plans";
+import { logAuditEvent } from "@/lib/audit/log-event";
 
 // Lazy initialization to avoid build-time errors
 function getSupabaseAdmin() {
@@ -60,7 +61,7 @@ export async function POST(request: Request): Promise<Response> {
     // Get user from database to check quota
     const { data: dbUser, error: userError } = await supabaseAdmin
       .from("users")
-      .select("id, plan, messages_remaining, bonus_messages_remaining, name")
+      .select("id, plan, messages_remaining, bonus_messages_remaining, messages_reset_at, name")
       .eq("clerk_id", clerkUserId)
       .single();
 
@@ -70,6 +71,37 @@ export async function POST(request: Request): Promise<Response> {
         JSON.stringify({ error: "User not found. Please try signing out and back in." }),
         { status: 404, headers: { "Content-Type": "application/json" } }
       );
+    }
+
+    // ========================================================================
+    // Auto-reset monthly messages if 30+ days have passed
+    // This ensures yearly subscribers still get monthly message resets
+    // ========================================================================
+    if (dbUser.plan === "pro" && dbUser.messages_reset_at) {
+      const resetDate = new Date(dbUser.messages_reset_at);
+      const now = new Date();
+      const daysSinceReset = Math.floor((now.getTime() - resetDate.getTime()) / (1000 * 60 * 60 * 24));
+
+      if (daysSinceReset >= 30) {
+        console.log(`[Design Stream] Auto-resetting messages for user ${dbUser.id} (${daysSinceReset} days since last reset)`);
+        const messagesPerMonth = PLANS.pro.messagesPerMonth;
+
+        const { error: resetError } = await supabaseAdmin
+          .from("users")
+          .update({
+            messages_remaining: messagesPerMonth,
+            messages_reset_at: now.toISOString(),
+          })
+          .eq("id", dbUser.id);
+
+        if (resetError) {
+          console.error("[Design Stream] Error auto-resetting messages:", resetError);
+        } else {
+          // Update local variable to reflect reset
+          dbUser.messages_remaining = messagesPerMonth;
+          dbUser.messages_reset_at = now.toISOString();
+        }
+      }
     }
 
     // Get user's API key from headers FIRST (BYOK)
@@ -85,6 +117,18 @@ export async function POST(request: Request): Promise<Response> {
       const upgradeMessage = dbUser.plan === "free"
         ? "You've used all your free messages this month. Upgrade to Pro for 50 messages/month!"
         : "You've used all your messages this month. Purchase more messages to continue.";
+
+      // Log quota exceeded event
+      await logAuditEvent({
+        userId: dbUser.id,
+        eventType: 'QUOTA_EXCEEDED',
+        metadata: {
+          plan: dbUser.plan as 'free' | 'pro',
+          messagesRemaining: dbUser.messages_remaining,
+          bonusRemaining: bonusRemaining,
+        },
+        request,
+      });
 
       return new Response(
         JSON.stringify({
@@ -132,7 +176,7 @@ export async function POST(request: Request): Promise<Response> {
     console.log(`[Design Stream] Using ${usingPlatformKey ? "platform" : "user"} API key`);
 
     // Parse request body
-    const { prompt, existingScreens, conversationHistory, platform, imageUrl, model: requestedModel } = await request.json();
+    const { prompt, existingScreens, conversationHistory, platform, imageUrl, model: requestedModel, projectId } = await request.json();
 
     // ========================================================================
     // Model Access Check (Free users can only use Flash)
@@ -380,6 +424,18 @@ IMPORTANT:
           controller.enqueue(encoder.encode(doneData));
 
           console.log(`[Design Stream] Completed with ${chunkCount} chunks`);
+
+          // Log design generation event (fire-and-forget, don't await)
+          logAuditEvent({
+            userId: dbUser.id,
+            eventType: 'DESIGN_GENERATED',
+            metadata: {
+              projectId: projectId || 'unknown',
+              model: selectedModel,
+              provider: provider || 'openrouter',
+              usingBYOK: !usingPlatformKey,
+            },
+          }).catch(() => {/* ignore */});
         } catch (error) {
           console.error("[Design Stream] Error:", error);
           const errorMessage = error instanceof Error ? error.message : "Unknown error";
