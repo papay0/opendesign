@@ -547,6 +547,49 @@ export interface Database {
           }
         ]
       }
+
+      /**
+       * Prototype debug logs table - stores raw LLM output for debugging
+       * Used to diagnose issues with screen parsing
+       */
+      prototype_debug_logs: {
+        Row: {
+          id: string
+          project_id: string               // Foreign key to prototype_projects
+          raw_output: string               // Complete raw LLM output
+          parsed_screens_count: number | null  // Number of screens actually parsed
+          expected_screens: string[] | null    // Screen names mentioned by AI
+          actual_screens: string[] | null      // Screen names actually parsed
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          raw_output: string
+          parsed_screens_count?: number | null
+          expected_screens?: string[] | null
+          actual_screens?: string[] | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          raw_output?: string
+          parsed_screens_count?: number | null
+          expected_screens?: string[] | null
+          actual_screens?: string[] | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prototype_debug_logs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "prototype_projects"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -647,3 +690,8 @@ export type PrototypeMessage = Database['public']['Tables']['prototype_messages'
 export type PrototypeMessageInsert = Database['public']['Tables']['prototype_messages']['Insert']
 /** Prototype message update type */
 export type PrototypeMessageUpdate = Database['public']['Tables']['prototype_messages']['Update']
+
+/** Prototype debug log row type */
+export type PrototypeDebugLog = Database['public']['Tables']['prototype_debug_logs']['Row']
+/** Prototype debug log insert type */
+export type PrototypeDebugLogInsert = Database['public']['Tables']['prototype_debug_logs']['Insert']

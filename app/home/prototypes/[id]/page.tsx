@@ -35,12 +35,14 @@ import {
   Layers,
   Infinity,
   Play,
+  Bug,
+  X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { PrototypeProject, PrototypeScreen, UsageLog } from "@/lib/supabase/types";
 import { EditableProjectHeader } from "../../components/EditableProjectHeader";
 import { useDesignStreaming, type ParsedScreen, type UsageData, type QuotaExceededData } from "../../components/StreamingScreenPreview";
-import { DesignCanvas } from "../../components/DesignCanvas";
+import { PrototypeCanvas } from "../../components/prototype/PrototypeCanvas";
 import { CodeView } from "../../components/CodeView";
 import { ExportMenu } from "../../components/ExportMenu";
 import { ProjectSkeleton } from "../../components/Skeleton";
@@ -195,6 +197,9 @@ function ChatInput({
   onModelChange,
   userPlan,
   isBYOKActive,
+  isAdmin,
+  lastRawOutput,
+  onDebugClick,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -207,6 +212,9 @@ function ChatInput({
   onImageChange: (url: string | null) => void;
   onImageClick?: (imageUrl: string) => void;
   selectedModel: ModelId;
+  isAdmin?: boolean;
+  lastRawOutput?: string | null;
+  onDebugClick?: () => void;
   onModelChange: (model: ModelId) => void;
   userPlan: PlanType;
   isBYOKActive: boolean;
@@ -339,6 +347,27 @@ function ChatInput({
                 </TooltipProvider>
               </>
             )}
+            {isAdmin && lastRawOutput && (
+              <>
+                <div className="w-px h-5 bg-[#E8E4E0] mx-1" />
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={onDebugClick}
+                        className="flex items-center gap-1 px-2 py-1 rounded-md bg-orange-50 text-orange-600 hover:bg-orange-100 transition-colors"
+                      >
+                        <Bug className="w-4 h-4" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>View raw LLM output</p>
+                      <p className="text-[10px] opacity-70">Debug mode</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </>
+            )}
           </div>
 
           <button
@@ -445,6 +474,11 @@ export default function PrototypePage() {
   const [isLoadingPlayer, setIsLoadingPlayer] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const userMessageRef = useRef<Message | null>(null);
+
+  // Debug state (admin only)
+  const [lastRawOutput, setLastRawOutput] = useState<string | null>(null);
+  const [isDebugModalOpen, setIsDebugModalOpen] = useState(false);
+  const [debugCopied, setDebugCopied] = useState(false);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -604,7 +638,7 @@ export default function PrototypePage() {
       for (let i = 0; i < screens.length; i++) {
         const screen = screens[i];
         // Use parsed grid position and isRoot from AI response
-        await supabase.from("prototype_screens").upsert(
+        const { error } = await supabase.from("prototype_screens").upsert(
           {
             project_id: projectId,
             screen_name: screen.name,
@@ -614,8 +648,106 @@ export default function PrototypePage() {
             grid_row: screen.gridRow ?? i,
             is_root: screen.isRoot ?? (i === 0),
           },
-          { onConflict: "project_id,screen_name" }
+          { onConflict: "project_id,screen_name", ignoreDuplicates: false }
         );
+        if (error) {
+          console.error(`[Prototype] Failed to save screen "${screen.name}":`, error);
+        }
+      }
+    },
+    onRawOutput: async (rawOutput: string) => {
+      // Store in state for debug UI
+      setLastRawOutput(rawOutput);
+
+      const supabase = createClient();
+
+      // =====================================================================
+      // SIMPLE APPROACH: Parse ALL screens from raw output and save them
+      // This is the SOURCE OF TRUTH - no streaming edge cases
+      // =====================================================================
+
+      // Regex to find all SCREEN_START...SCREEN_END blocks
+      const screenRegex = /<!-- SCREEN_START:\s*([^\n>]+?)(?:\s*-->|(?=\s*\n)|(?=<))([\s\S]*?)<!-- SCREEN_END -->/g;
+
+      let match;
+      const parsedScreens: { name: string; html: string; gridCol: number; gridRow: number; isRoot: boolean }[] = [];
+
+      while ((match = screenRegex.exec(rawOutput)) !== null) {
+        const rawName = match[1].trim();
+        const html = match[2].trim();
+
+        // Parse name, grid position, and ROOT marker
+        let name = rawName;
+        let gridCol = 0;
+        let gridRow = parsedScreens.length;
+        let isRoot = false;
+
+        // Check for [ROOT]
+        if (name.includes("[ROOT]")) {
+          isRoot = true;
+          name = name.replace("[ROOT]", "").trim();
+        }
+
+        // Check for [col,row]
+        const gridMatch = name.match(/\[(\d+),(\d+)\]/);
+        if (gridMatch) {
+          gridCol = parseInt(gridMatch[1], 10);
+          gridRow = parseInt(gridMatch[2], 10);
+          name = name.replace(gridMatch[0], "").trim();
+        }
+
+        // Clean up any remaining --> from name
+        name = name.replace(/-->$/, "").trim();
+
+        if (name && html) {
+          parsedScreens.push({ name, html, gridCol, gridRow, isRoot });
+        }
+      }
+
+      console.log(`[Prototype] Raw output parsed: ${parsedScreens.length} screens found:`, parsedScreens.map(s => s.name));
+
+      // Save ALL screens to database (this is the definitive save)
+      for (let i = 0; i < parsedScreens.length; i++) {
+        const screen = parsedScreens[i];
+        const { error: saveError } = await supabase.from("prototype_screens").upsert(
+          {
+            project_id: projectId,
+            screen_name: screen.name,
+            html_content: screen.html,
+            sort_order: i,
+            grid_col: screen.gridCol,
+            grid_row: screen.gridRow,
+            is_root: screen.isRoot,
+          },
+          { onConflict: "project_id,screen_name", ignoreDuplicates: false }
+        );
+        if (saveError) {
+          console.error(`[Prototype] Failed to save screen "${screen.name}":`, saveError);
+        } else {
+          console.log(`[Prototype] Saved screen "${screen.name}" at [${screen.gridCol},${screen.gridRow}]`);
+        }
+      }
+
+      // Update local state with all parsed screens
+      setSavedScreens(parsedScreens.map(s => ({
+        name: s.name,
+        html: s.html,
+        gridCol: s.gridCol,
+        gridRow: s.gridRow,
+        isRoot: s.isRoot,
+      })));
+
+      // Save debug log
+      const { error } = await supabase.from("prototype_debug_logs").insert({
+        project_id: projectId,
+        raw_output: rawOutput,
+        parsed_screens_count: parsedScreens.length,
+        expected_screens: [],
+        actual_screens: parsedScreens.map(s => s.name),
+      });
+
+      if (error) {
+        console.error("[Prototype] Failed to save debug log:", error);
       }
     },
     onUsage: async (usage: UsageData) => {
@@ -1094,6 +1226,9 @@ export default function PrototypePage() {
                     onModelChange={handleModelChange}
                     userPlan={userPlan}
                     isBYOKActive={isBYOKActive}
+                    isAdmin={isAdmin}
+                    lastRawOutput={lastRawOutput}
+                    onDebugClick={() => setIsDebugModalOpen(true)}
                   />
                 )}
               </div>
@@ -1103,7 +1238,7 @@ export default function PrototypePage() {
 
             <ResizablePanel defaultSize={70}>
               {viewMode === "preview" ? (
-                <DesignCanvas
+                <PrototypeCanvas
                   completedScreens={displayScreens}
                   currentStreamingHtml={currentStreamingHtml}
                   currentScreenName={currentScreenName}
@@ -1111,6 +1246,7 @@ export default function PrototypePage() {
                   editingScreenNames={editingScreenNames}
                   isEditingExistingScreen={isEditingExistingScreen}
                   platform={project?.platform || "mobile"}
+                  prototypeId={projectId}
                 />
               ) : (
                 <CodeView
@@ -1204,13 +1340,16 @@ export default function PrototypePage() {
                 onModelChange={handleModelChange}
                 userPlan={userPlan}
                 isBYOKActive={isBYOKActive}
+                isAdmin={isAdmin}
+                lastRawOutput={lastRawOutput}
+                onDebugClick={() => setIsDebugModalOpen(true)}
               />
             )}
           </div>
         )}
 
         {isMobile && mobileActiveTab === "canvas" && (
-          <DesignCanvas
+          <PrototypeCanvas
             completedScreens={displayScreens}
             currentStreamingHtml={currentStreamingHtml}
             currentScreenName={currentScreenName}
@@ -1219,6 +1358,7 @@ export default function PrototypePage() {
             isEditingExistingScreen={isEditingExistingScreen}
             platform={project?.platform || "mobile"}
             isMobileView={true}
+            prototypeId={projectId}
           />
         )}
 
@@ -1246,6 +1386,68 @@ export default function PrototypePage() {
           projectName={project?.name || "Untitled"}
           prototypeUrl={project?.prototype_url}
         />
+      )}
+
+      {/* Debug Modal (Admin Only) */}
+      {isDebugModalOpen && lastRawOutput && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="relative w-[90vw] max-w-4xl max-h-[85vh] bg-white rounded-2xl shadow-2xl flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <Bug className="w-5 h-5 text-orange-500" />
+                <h2 className="text-lg font-semibold text-gray-900">Raw LLM Output</h2>
+                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                  {lastRawOutput.length.toLocaleString()} chars
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(lastRawOutput);
+                    setDebugCopied(true);
+                    setTimeout(() => setDebugCopied(false), 2000);
+                  }}
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  {debugCopied ? (
+                    <>
+                      <Check className="w-4 h-4 text-green-500" />
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4" />
+                      Copy All
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => setIsDebugModalOpen(false)}
+                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-auto p-6">
+              <pre className="text-sm text-gray-800 whitespace-pre-wrap font-mono bg-gray-50 p-4 rounded-xl border border-gray-200 leading-relaxed">
+                {lastRawOutput}
+              </pre>
+            </div>
+
+            {/* Footer with stats */}
+            <div className="px-6 py-3 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
+              <div className="flex items-center gap-4 text-xs text-gray-500">
+                <span>SCREEN_START count: {(lastRawOutput.match(/SCREEN_START/g) || []).length}</span>
+                <span>SCREEN_END count: {(lastRawOutput.match(/SCREEN_END/g) || []).length}</span>
+                <span>MESSAGE count: {(lastRawOutput.match(/<!-- MESSAGE:/g) || []).length}</span>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

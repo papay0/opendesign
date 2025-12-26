@@ -29,16 +29,63 @@ const PROTOTYPE_COMMUNICATION_RULES = `COMMUNICATION - Use these comment delimit
 2. <!-- PROJECT_ICON: emoji --> **MUST BE YOUR SECOND OUTPUT** (only on first generation)
 3. <!-- MESSAGE: text --> to communicate with the user (between screens, at end)
 4. <!-- SCREEN_START: Screen Name [col,row] --> for NEW screens with grid position
-   - Add [ROOT] after position for the entry point: <!-- SCREEN_START: Home [0,0] [ROOT] -->
+   - Add [ROOT] after position for the entry point: <!-- SCREEN_START: Home [1,1] [ROOT] -->
 5. <!-- SCREEN_EDIT: Exact Screen Name --> for EDITING existing screens (no position needed)
 6. <!-- SCREEN_END --> to mark the end of each screen
 
-GRID POSITION RULES:
-- [col,row] defines where the screen appears on the canvas (0-indexed)
-- [0,0] is top-left, [1,0] is to the right, [0,1] is below
-- Place related screens adjacent to each other
-- Main flow should generally go left-to-right, top-to-bottom
-- The [ROOT] screen is the entry point and should usually be at [0,0]`;
+**CRITICAL - DELIMITER SYNTAX:**
+- ALL delimiters MUST have BOTH opening "<!--" AND closing "-->"
+- WRONG: <!-- SCREEN_START: Home [1,1]    (missing -->)
+- CORRECT: <!-- SCREEN_START: Home [1,1] -->
+- If you forget the closing "-->" the screen will NOT be parsed and will be LOST
+- Double-check EVERY delimiter has proper opening AND closing tags
+
+GRID POSITION RULES - THINK BEFORE YOU PLACE:
+Screens are displayed on a 2D canvas with arrows connecting linked screens.
+Your goal: a clean layout where arrows don't cross and related screens cluster together.
+
+COORDINATES:
+- [col,row] places a screen (0-indexed). [0,0] = top-left, [1,0] = right, [0,1] = below.
+- [ROOT] = prototype entry point (can be anywhere).
+
+PRINCIPLES:
+
+1. **CONNECTED = ADJACENT**
+   If two screens link to each other, place them 1 cell apart.
+   Never put connected screens 3+ cells away - arrows become spaghetti.
+
+2. **POPULAR SCREENS GO CENTER**
+   Count each screen's connections. The one with the MOST goes in the middle.
+   Others arrange around it. A hub in the corner = arrows crossing everywhere.
+
+3. **"ALWAYS THERE" vs "VISIT ME"**
+   - "Always there": screens accessible anytime (e.g., bottom nav tabs) → place as EQUALS in a ROW
+   - "Visit me": screens you reach via a specific action (tap card, click button) → place PERPENDICULAR to parent (above/below)
+
+   Ask: "Can I reach this screen from anywhere, or only from one place?"
+
+4. **SAME FLOW = SAME CLUSTER**
+   Screens that form a sequence (e.g., step 1 → step 2 → step 3) should cluster tightly.
+   Don't scatter a flow across the canvas.
+
+5. **PERPENDICULAR SUB-FLOWS**
+   If your main screens run horizontally, sub-flows go vertically (or vice versa).
+   This prevents endless horizontal chains and keeps parent-child relationships clear.
+
+6. **NO CROSSING ARROWS**
+   Before finalizing, mentally draw the arrows. If any cross, move screens until they don't.
+   A good layout has arrows that radiate outward without intersecting.
+
+7. **MULTIPLE HUBS FOR LARGE APPS**
+   10+ screens? You likely have 2-3 natural clusters, each with its own hub.
+   Position clusters separately, connect them with minimal arrows.
+
+BEFORE YOU START:
+1. List all screens
+2. Identify which are "always there" vs "visit me"
+3. Count connections - find your hub(s)
+4. Sketch the layout mentally: hub centered, equals in rows, sub-flows perpendicular
+5. Verify no arrows would cross`;
 
 const PROTOTYPE_EDIT_RULES = `IMPORTANT FOR EDITS:
 - When user asks to modify an existing screen, use <!-- SCREEN_EDIT: Exact Screen Name --> with the EXACT same name
@@ -215,8 +262,8 @@ MOBILE-SPECIFIC GUIDELINES:
 const MOBILE_PROTOTYPE_EXAMPLE = `EXAMPLE OUTPUT:
 <!-- PROJECT_NAME: Flavour -->
 <!-- PROJECT_ICON: 🍳 -->
-<!-- MESSAGE: I'm creating a premium recipe app with 5 screens: Home (featuring hero cards with glassmorphism), Recipe Detail (immersive photo with floating ingredients), Search (with trending categories), Saved (collection grid), and Profile (stats dashboard). Let's cook! -->
-<!-- SCREEN_START: Home [0,0] [ROOT] -->
+<!-- MESSAGE: Planning layout: 5 screens total. Bottom nav has 4 tabs (Home, Search, Saved, Profile) = "always there" → row 1. Home has most connections → centered at [1,1]. Recipe Detail is "visit me" (accessed from card tap) → perpendicular at [1,0]. -->
+<!-- SCREEN_START: Home [1,1] [ROOT] -->
 <div class="h-screen flex flex-col bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50">
   <header class="shrink-0 pt-14 px-6 pb-2">
     <div class="flex justify-between items-center">
@@ -285,7 +332,7 @@ const MOBILE_PROTOTYPE_EXAMPLE = `EXAMPLE OUTPUT:
   </nav>
 </div>
 <!-- SCREEN_END -->
-<!-- MESSAGE: Now crafting the immersive recipe detail with a stunning hero image, floating ingredient cards, and step-by-step instructions... -->
+<!-- MESSAGE: Recipe Detail at [1,0] - "visit me" screen, perpendicular to Home. -->
 <!-- SCREEN_START: Recipe Detail [1,0] -->
 <div class="h-screen flex flex-col bg-white">
   <div class="relative h-72 shrink-0">
@@ -351,7 +398,7 @@ const MOBILE_PROTOTYPE_EXAMPLE = `EXAMPLE OUTPUT:
   </div>
 </div>
 <!-- SCREEN_END -->
-<!-- MESSAGE: Building the search experience with trending categories and cuisine filters... -->
+<!-- MESSAGE: Search at [0,1] - "always there" tab, same row as Home. -->
 <!-- SCREEN_START: Search [0,1] -->
 <div class="h-screen flex flex-col bg-gray-50">
   <header class="shrink-0 pt-14 px-6 pb-4 bg-white">
@@ -387,8 +434,8 @@ const MOBILE_PROTOTYPE_EXAMPLE = `EXAMPLE OUTPUT:
   </nav>
 </div>
 <!-- SCREEN_END -->
-<!-- MESSAGE: Creating the saved recipes collection with a beautiful masonry-style grid... -->
-<!-- SCREEN_START: Saved [1,1] -->
+<!-- MESSAGE: Saved at [2,1] - continuing the tab row. -->
+<!-- SCREEN_START: Saved [2,1] -->
 <div class="h-screen flex flex-col bg-white">
   <header class="shrink-0 pt-14 px-6 pb-4">
     <h1 class="text-2xl font-black text-gray-900">Saved Recipes</h1>
@@ -426,8 +473,8 @@ const MOBILE_PROTOTYPE_EXAMPLE = `EXAMPLE OUTPUT:
   </nav>
 </div>
 <!-- SCREEN_END -->
-<!-- MESSAGE: Finally, crafting the profile with cooking stats, achievements, and a premium feel... -->
-<!-- SCREEN_START: Profile [2,1] -->
+<!-- MESSAGE: Profile at [3,1] - end of tab row. All tabs in row 1, detail screen perpendicular above. -->
+<!-- SCREEN_START: Profile [3,1] -->
 <div class="h-screen flex flex-col bg-gradient-to-b from-orange-50 to-white">
   <header class="shrink-0 pt-14 px-6 pb-8 text-center">
     <div class="relative inline-block">

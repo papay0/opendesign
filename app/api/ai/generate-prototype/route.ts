@@ -300,6 +300,7 @@ IMPORTANT:
             system: systemPrompt,
             messages,
             temperature: 0.7,
+            // No maxTokens - let model use its full capacity
           });
 
           for await (const textPart of result.textStream) {

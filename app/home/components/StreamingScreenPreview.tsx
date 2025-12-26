@@ -86,6 +86,7 @@ export interface StreamingCallbacks {
   onScreenEditStart?: (screenName: string) => void;
   onScreenComplete?: (screen: ParsedScreen) => void;
   onStreamComplete?: (screens: ParsedScreen[]) => void;
+  onRawOutput?: (rawOutput: string) => void; // For debugging - raw LLM output
   onUsage?: (usage: UsageData) => void;
   onError?: (error: string) => void;
   onQuotaExceeded?: (data: QuotaExceededData) => void;
@@ -233,6 +234,7 @@ export function useDesignStreaming(callbacks: StreamingCallbacks) {
 
       let buffer = "";
       let rawContent = "";
+      let fullRawOutput = ""; // Accumulate ALL raw output for debugging
       let inScreen = false;
       let screenName = "";
       let screenHtml = "";
@@ -308,6 +310,7 @@ export function useDesignStreaming(callbacks: StreamingCallbacks) {
 
                 if (data.chunk) {
                   rawContent += data.chunk;
+                  fullRawOutput += data.chunk; // Keep unmodified copy for debugging
                   console.log(`[Stream] Chunk received, buffer length: ${rawContent.length}`);
 
                   // Parse MESSAGE delimiter
@@ -339,7 +342,8 @@ export function useDesignStreaming(callbacks: StreamingCallbacks) {
 
                   // Parse SCREEN_START delimiter (new screen)
                   // Supports both basic "Name" and prototype format "Name [col,row] [ROOT]"
-                  const startMatch = rawContent.match(/<!-- SCREEN_START: (.+?) -->/);
+                  // Relaxed regex: also matches if AI forgets the closing -->
+                  const startMatch = rawContent.match(/<!-- SCREEN_START:\s*([^\n<>]+?)(?:\s*-->|(?=\s*\n)|(?=<))/);
                   if (startMatch && !inScreen) {
                     inScreen = true;
                     isEditingScreen = false;
@@ -358,7 +362,8 @@ export function useDesignStreaming(callbacks: StreamingCallbacks) {
                   }
 
                   // Parse SCREEN_EDIT delimiter (editing existing screen)
-                  const editMatch = rawContent.match(/<!-- SCREEN_EDIT: (.+?) -->/);
+                  // Relaxed regex: also matches if AI forgets the closing -->
+                  const editMatch = rawContent.match(/<!-- SCREEN_EDIT:\s*([^\n<>]+?)(?:\s*-->|(?=\s*\n)|(?=<))/);
                   if (editMatch && !inScreen) {
                     inScreen = true;
                     isEditingScreen = true;
@@ -371,44 +376,100 @@ export function useDesignStreaming(callbacks: StreamingCallbacks) {
                     rawContent = rawContent.replace(editMatch[0], "");
                   }
 
-                  // If we're in a screen, accumulate HTML
-                  if (inScreen) {
-                    // Check for SCREEN_END
-                    const endIndex = rawContent.indexOf("<!-- SCREEN_END -->");
-                    if (endIndex !== -1) {
-                      screenHtml += rawContent.substring(0, endIndex);
-                      rawContent = rawContent.substring(endIndex + "<!-- SCREEN_END -->".length);
+                  // Process screens in a loop to handle multiple screens in one chunk
+                  let processingScreens = true;
+                  while (processingScreens) {
+                    processingScreens = false;
 
-                      // Complete the screen
-                      const completedScreen: ParsedScreen = {
-                        name: screenName,
-                        html: screenHtml.trim(),
-                        isEdit: isEditingScreen,
-                        gridCol: screenGridCol,
-                        gridRow: screenGridRow,
-                        isRoot: screenIsRoot,
-                      };
-                      console.log(`[Stream] SCREEN_END: "${screenName}", isEdit: ${isEditingScreen}, HTML length: ${completedScreen.html.length}${screenGridCol !== undefined ? `, grid: [${screenGridCol},${screenGridRow}]` : ""}${screenIsRoot ? ", ROOT" : ""}`);
-                      screens.push(completedScreen);
-                      console.log(`[Stream] Total completed screens: ${screens.length}`, screens.map(s => `${s.name}${s.isEdit ? ' (edit)' : ''}`));
-                      setCompletedScreens([...screens]);
-                      callbacks.onScreenComplete?.(completedScreen);
+                    // If we're in a screen, accumulate HTML
+                    if (inScreen) {
+                      // Check for SCREEN_END
+                      const endIndex = rawContent.indexOf("<!-- SCREEN_END -->");
+                      if (endIndex !== -1) {
+                        screenHtml += rawContent.substring(0, endIndex);
+                        rawContent = rawContent.substring(endIndex + "<!-- SCREEN_END -->".length);
 
-                      inScreen = false;
-                      screenName = "";
-                      screenHtml = "";
-                      isEditingScreen = false;
-                      screenGridCol = undefined;
-                      screenGridRow = undefined;
-                      screenIsRoot = false;
-                      setCurrentScreenName(null);
-                      setCurrentStreamingHtml("");
-                      setIsEditingExistingScreen(false);
-                    } else {
-                      // Still streaming this screen
-                      screenHtml += rawContent;
-                      setCurrentStreamingHtml(screenHtml);
-                      rawContent = "";
+                        // Complete the screen
+                        const completedScreen: ParsedScreen = {
+                          name: screenName,
+                          html: screenHtml.trim(),
+                          isEdit: isEditingScreen,
+                          gridCol: screenGridCol,
+                          gridRow: screenGridRow,
+                          isRoot: screenIsRoot,
+                        };
+                        console.log(`[Stream] SCREEN_END: "${screenName}", isEdit: ${isEditingScreen}, HTML length: ${completedScreen.html.length}${screenGridCol !== undefined ? `, grid: [${screenGridCol},${screenGridRow}]` : ""}${screenIsRoot ? ", ROOT" : ""}`);
+                        screens.push(completedScreen);
+                        console.log(`[Stream] Total completed screens: ${screens.length}`, screens.map(s => `${s.name}${s.isEdit ? ' (edit)' : ''}`));
+                        setCompletedScreens([...screens]);
+                        callbacks.onScreenComplete?.(completedScreen);
+
+                        inScreen = false;
+                        screenName = "";
+                        screenHtml = "";
+                        isEditingScreen = false;
+                        screenGridCol = undefined;
+                        screenGridRow = undefined;
+                        screenIsRoot = false;
+                        setCurrentScreenName(null);
+                        setCurrentStreamingHtml("");
+                        setIsEditingExistingScreen(false);
+
+                        // Continue processing to check for another screen in remaining content
+                        processingScreens = rawContent.trim().length > 0;
+                      } else {
+                        // Still streaming this screen
+                        screenHtml += rawContent;
+                        setCurrentStreamingHtml(screenHtml);
+                        rawContent = "";
+                      }
+                    } else if (rawContent.trim()) {
+                      // Not in a screen - check for new SCREEN_START or SCREEN_EDIT
+                      // Parse MESSAGE delimiter first
+                      const messageMatch = rawContent.match(/<!-- MESSAGE: ([\s\S]*?) -->/g);
+                      if (messageMatch) {
+                        for (const match of messageMatch) {
+                          const msg = match.replace(/<!-- MESSAGE: /, "").replace(/ -->/, "");
+                          console.log(`[Stream] MESSAGE found (in loop): "${msg.substring(0, 50)}..."`);
+                          callbacks.onMessage?.(msg);
+                          rawContent = rawContent.replace(match, "");
+                        }
+                      }
+
+                      // Check for SCREEN_START
+                      const newStartMatch = rawContent.match(/<!-- SCREEN_START:\s*([^\n<>]+?)(?:\s*-->|(?=\s*\n)|(?=<))/);
+                      if (newStartMatch) {
+                        inScreen = true;
+                        isEditingScreen = false;
+                        const rawScreenName = newStartMatch[1].trim();
+                        const parsed = parsePrototypeScreenName(rawScreenName);
+                        screenName = parsed.name;
+                        screenGridCol = parsed.gridCol;
+                        screenGridRow = parsed.gridRow;
+                        screenIsRoot = parsed.isRoot || false;
+                        screenHtml = "";
+                        console.log(`[Stream] SCREEN_START (in loop): "${screenName}"${screenGridCol !== undefined ? ` at [${screenGridCol},${screenGridRow}]` : ""}${screenIsRoot ? " [ROOT]" : ""}`);
+                        setCurrentScreenName(screenName);
+                        setIsEditingExistingScreen(false);
+                        callbacks.onScreenStart?.(screenName);
+                        rawContent = rawContent.replace(newStartMatch[0], "");
+                        processingScreens = true; // Continue to process this screen's content
+                      }
+
+                      // Check for SCREEN_EDIT
+                      const newEditMatch = rawContent.match(/<!-- SCREEN_EDIT:\s*([^\n<>]+?)(?:\s*-->|(?=\s*\n)|(?=<))/);
+                      if (newEditMatch && !inScreen) {
+                        inScreen = true;
+                        isEditingScreen = true;
+                        screenName = newEditMatch[1].trim();
+                        screenHtml = "";
+                        console.log(`[Stream] SCREEN_EDIT (in loop): "${screenName}"`);
+                        setCurrentScreenName(screenName);
+                        setIsEditingExistingScreen(true);
+                        callbacks.onScreenEditStart?.(screenName);
+                        rawContent = rawContent.replace(newEditMatch[0], "");
+                        processingScreens = true;
+                      }
                     }
                   }
                 }
@@ -428,6 +489,42 @@ export function useDesignStreaming(callbacks: StreamingCallbacks) {
                 }
 
                 if (data.done) {
+                  // Log remaining content for debugging
+                  if (rawContent.trim()) {
+                    console.log(`[Stream] DONE with remaining rawContent (${rawContent.length} chars):`, rawContent.substring(0, 500));
+                  }
+
+                  // Check if there's an unprocessed SCREEN_START in remaining content
+                  const unprocessedStart = rawContent.match(/<!-- SCREEN_START:\s*([^\n<>]+?)(?:\s*-->|(?=\s*\n)|(?=<))/);
+                  if (unprocessedStart) {
+                    console.warn(`[Stream] WARNING: Found unprocessed SCREEN_START for "${unprocessedStart[1]}" in remaining content!`);
+
+                    // Try to extract this screen
+                    const screenStartIndex = rawContent.indexOf(unprocessedStart[0]);
+                    const screenEndMatch = rawContent.indexOf("<!-- SCREEN_END -->");
+
+                    if (screenEndMatch !== -1 && screenEndMatch > screenStartIndex) {
+                      const parsed = parsePrototypeScreenName(unprocessedStart[1].trim());
+                      const htmlStart = screenStartIndex + unprocessedStart[0].length;
+                      const recoveredHtml = rawContent.substring(htmlStart, screenEndMatch).trim();
+
+                      if (recoveredHtml) {
+                        console.log(`[Stream] Recovering screen "${parsed.name}" with ${recoveredHtml.length} chars`);
+                        const recoveredScreen: ParsedScreen = {
+                          name: parsed.name,
+                          html: recoveredHtml,
+                          isEdit: false,
+                          gridCol: parsed.gridCol,
+                          gridRow: parsed.gridRow,
+                          isRoot: parsed.isRoot,
+                        };
+                        screens.push(recoveredScreen);
+                        setCompletedScreens([...screens]);
+                        callbacks.onScreenComplete?.(recoveredScreen);
+                      }
+                    }
+                  }
+
                   // If we're still in a screen when done, capture it (stream might have ended abruptly)
                   if (inScreen && screenName && screenHtml.trim()) {
                     console.log(`[Stream] DONE but still in screen "${screenName}" - capturing partial screen`);
@@ -446,6 +543,7 @@ export function useDesignStreaming(callbacks: StreamingCallbacks) {
 
                   console.log(`[Stream] DONE - Final screens: ${screens.length}`, screens.map(s => `${s.name}${s.isEdit ? ' (edit)' : ''}`));
                   callbacks.onStreamComplete?.(screens);
+                  callbacks.onRawOutput?.(fullRawOutput); // Send raw output for debugging
                 }
               } catch (e) {
                 // JSON parse error - might be incomplete data
