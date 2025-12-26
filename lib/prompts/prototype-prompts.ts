@@ -103,11 +103,17 @@ ALL clickable elements that navigate to another screen MUST have a data-flow att
 <a href="#screen-target-name" data-flow="screen-target-name" class="...">Click me</a>
 <button data-flow="screen-settings" class="...">Settings</button>
 
-SCREEN ID CONVENTION:
-- Screen name "Home Screen" → href="#screen-home-screen"
+SCREEN ID CONVENTION - FOLLOW EXACTLY:
+- Screen name "Home" → href="#screen-home"
 - Screen name "Settings" → href="#screen-settings"
+- Screen name "Listing Detail" → href="#screen-listing-detail" (NOT #screen-listing!)
 - Screen name "User Profile" → href="#screen-user-profile"
-- Rule: "screen-" + lowercase name with spaces replaced by hyphens
+- Rule: "screen-" + FULL lowercase name with spaces replaced by hyphens
+
+**DO NOT ABBREVIATE OR SHORTEN SCREEN NAMES IN LINKS!**
+- If screen is named "Listing Detail", use "screen-listing-detail" NOT "screen-listing"
+- If screen is named "Recipe Detail", use "screen-recipe-detail" NOT "screen-recipe"
+- The href ID must match the EXACT full screen name
 
 CRITICAL: The data-flow value must match the href target (without the #).
 Example: href="#screen-settings" data-flow="screen-settings"
@@ -162,19 +168,113 @@ NAVIGATION EXAMPLES:
   </svg>
 </a>`;
 
-const INTERACTIVITY_RULES = `INTERACTIVITY - Forms & Inputs Work:
-Unlike static designs, prototype screens have WORKING form elements:
+const INTERACTIVITY_RULES = `INTERACTIVITY - Make It Feel Real:
+Prototype screens should feel like real apps with working UI. Use vanilla JavaScript for interactivity.
 
+FORM ELEMENTS (always work):
 - Text inputs: <input type="text" class="..." placeholder="Enter name" />
 - Checkboxes: <input type="checkbox" class="..." />
 - Radio buttons: <input type="radio" name="group" class="..." />
 - Selects: <select class="..."><option>Option 1</option></select>
 - Textareas: <textarea class="..." placeholder="Write here..."></textarea>
-- Buttons: Use data-flow for navigation, regular buttons for form actions
 
-FORM STYLING:
-<input type="text" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" placeholder="Email" />
-<button class="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors">Submit</button>`;
+ADD JAVASCRIPT for these common patterns:
+
+1. **TAB SWITCHING** - Use onclick handlers:
+<div class="flex border-b border-gray-200">
+  <button onclick="switchTab('feelings')" id="tab-feelings" class="px-4 py-2 font-medium text-blue-600 border-b-2 border-blue-600">Feelings</button>
+  <button onclick="switchTab('needs')" id="tab-needs" class="px-4 py-2 font-medium text-gray-500">Needs</button>
+</div>
+<div id="panel-feelings" class="py-4">Feelings content here...</div>
+<div id="panel-needs" class="py-4 hidden">Needs content here...</div>
+<script>
+function switchTab(tab) {
+  // Hide all panels, show selected
+  document.querySelectorAll('[id^="panel-"]').forEach(p => p.classList.add('hidden'));
+  document.getElementById('panel-' + tab).classList.remove('hidden');
+  // Update tab styles
+  document.querySelectorAll('[id^="tab-"]').forEach(t => {
+    t.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600');
+    t.classList.add('text-gray-500');
+  });
+  document.getElementById('tab-' + tab).classList.add('text-blue-600', 'border-b-2', 'border-blue-600');
+  document.getElementById('tab-' + tab).classList.remove('text-gray-500');
+}
+</script>
+
+2. **SEARCH/FILTER** - Filter list items as user types:
+<input type="search" oninput="filterItems(this.value)" placeholder="Search..." class="w-full px-4 py-3 border rounded-xl" />
+<div id="items-list">
+  <div class="item" data-search="inspired creative energy">Inspired - Full of energy</div>
+  <div class="item" data-search="serene peaceful calm">Serene - Peaceful and calm</div>
+  <div class="item" data-search="agitated disturbed">Agitated - Disturbed or excited</div>
+</div>
+<script>
+function filterItems(query) {
+  const q = query.toLowerCase();
+  document.querySelectorAll('.item').forEach(item => {
+    const searchText = item.dataset.search.toLowerCase();
+    item.style.display = searchText.includes(q) ? '' : 'none';
+  });
+}
+</script>
+
+3. **ACCORDION/EXPANDABLE** - Toggle content visibility:
+<button onclick="toggleAccordion('faq1')" class="w-full text-left p-4 bg-gray-50 rounded-lg flex justify-between items-center">
+  <span>How does this work?</span>
+  <span id="icon-faq1">+</span>
+</button>
+<div id="content-faq1" class="hidden p-4 text-gray-600">
+  Answer content goes here...
+</div>
+<script>
+function toggleAccordion(id) {
+  const content = document.getElementById('content-' + id);
+  const icon = document.getElementById('icon-' + id);
+  content.classList.toggle('hidden');
+  icon.textContent = content.classList.contains('hidden') ? '+' : '−';
+}
+</script>
+
+4. **MODAL/DIALOG** - Show/hide overlays:
+<button onclick="openModal('confirm')" class="px-4 py-2 bg-red-500 text-white rounded-lg">Delete</button>
+<div id="modal-confirm" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-2xl p-6 max-w-sm mx-4">
+    <h3 class="font-bold text-lg">Confirm Delete?</h3>
+    <p class="text-gray-500 mt-2">This action cannot be undone.</p>
+    <div class="flex gap-3 mt-6">
+      <button onclick="closeModal('confirm')" class="flex-1 py-2 border rounded-lg">Cancel</button>
+      <button onclick="closeModal('confirm')" class="flex-1 py-2 bg-red-500 text-white rounded-lg">Delete</button>
+    </div>
+  </div>
+</div>
+<script>
+function openModal(id) { document.getElementById('modal-' + id).classList.remove('hidden'); }
+function closeModal(id) { document.getElementById('modal-' + id).classList.add('hidden'); }
+</script>
+
+5. **DROPDOWN MENU** - Toggle dropdown visibility:
+<div class="relative">
+  <button onclick="toggleDropdown('sort')" class="px-4 py-2 border rounded-lg flex items-center gap-2">
+    Sort by <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+  </button>
+  <div id="dropdown-sort" class="hidden absolute top-full left-0 mt-1 bg-white border rounded-lg shadow-lg py-1 min-w-[150px] z-10">
+    <button onclick="closeDropdown('sort')" class="w-full text-left px-4 py-2 hover:bg-gray-50">Newest</button>
+    <button onclick="closeDropdown('sort')" class="w-full text-left px-4 py-2 hover:bg-gray-50">Oldest</button>
+    <button onclick="closeDropdown('sort')" class="w-full text-left px-4 py-2 hover:bg-gray-50">Popular</button>
+  </div>
+</div>
+<script>
+function toggleDropdown(id) { document.getElementById('dropdown-' + id).classList.toggle('hidden'); }
+function closeDropdown(id) { document.getElementById('dropdown-' + id).classList.add('hidden'); }
+</script>
+
+JAVASCRIPT RULES:
+- Place <script> tags at the END of each screen's HTML (before SCREEN_END)
+- Use simple, self-contained functions - no external dependencies
+- Keep function names unique per screen (or use generic names that work across screens)
+- Always use vanilla JS - NO React, NO frameworks
+- Focus on UI behavior, not complex business logic`;
 
 const SCROLLING_RULES = `SCROLLING - Content Can Scroll:
 Unlike fixed mockups, prototype screens can scroll. Use overflow-y-auto on containers:
@@ -213,9 +313,9 @@ const DESIGN_QUALITY = `DESIGN QUALITY - THIS IS THE MOST IMPORTANT:
 
 const HTML_CSS_RULES = `HTML/CSS RULES:
 - Use Tailwind CSS classes extensively for ALL styling
-- NO React, NO custom JavaScript - pure HTML with working forms
 - Include realistic placeholder content (names, dates, numbers, descriptions)
-- All navigation must use anchor links with data-flow attributes`;
+- All navigation must use anchor links with data-flow attributes
+- You CAN and SHOULD use vanilla JavaScript for interactivity (see INTERACTIVITY section)`;
 
 // IMAGE_RULES is imported from system-prompts.ts to ensure consistency
 

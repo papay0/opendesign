@@ -7,10 +7,9 @@
  * allowing users to click through and test navigation.
  */
 
-import { useEffect, useCallback, useRef } from "react";
+import { useEffect, useCallback, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Smartphone, Monitor, ExternalLink, Copy, Check, MousePointer2 } from "lucide-react";
-import { useState } from "react";
 
 interface PrototypePlayerProps {
   isOpen: boolean;
@@ -31,7 +30,38 @@ export function PrototypePlayer({
 }: PrototypePlayerProps) {
   const [copied, setCopied] = useState(false);
   const [showHotspots, setShowHotspots] = useState(true);
+  const [scale, setScale] = useState(1);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const viewport = platform === "mobile"
+    ? { width: 390, height: 844 }
+    : { width: 1440, height: 900 };
+
+  // Calculate scale to fit container
+  useEffect(() => {
+    const calculateScale = () => {
+      if (!containerRef.current) return;
+
+      const container = containerRef.current;
+      const availableWidth = container.clientWidth - 48; // padding
+      const availableHeight = container.clientHeight - 48;
+
+      // Frame dimensions (content + frame chrome)
+      const frameWidth = platform === "mobile" ? viewport.width + 24 : viewport.width;
+      const frameHeight = platform === "mobile" ? viewport.height + 24 : viewport.height + 44;
+
+      const scaleX = availableWidth / frameWidth;
+      const scaleY = availableHeight / frameHeight;
+      const newScale = Math.min(scaleX, scaleY, 1); // Don't scale up beyond 1
+
+      setScale(newScale);
+    };
+
+    calculateScale();
+    window.addEventListener("resize", calculateScale);
+    return () => window.removeEventListener("resize", calculateScale);
+  }, [isOpen, platform, viewport.width, viewport.height]);
 
   // Send hotspot toggle message to iframe
   useEffect(() => {
@@ -73,10 +103,6 @@ export function PrototypePlayer({
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }, [prototypeUrl]);
-
-  const viewport = platform === "mobile"
-    ? { width: 390, height: 844 }
-    : { width: 1440, height: 900 };
 
   return (
     <AnimatePresence>
@@ -156,12 +182,11 @@ export function PrototypePlayer({
           </div>
 
           {/* Device Frame + Iframe */}
-          <div className="flex-1 flex items-center justify-center p-4 overflow-hidden">
+          <div ref={containerRef} className="flex-1 flex items-center justify-center p-6 overflow-hidden">
             <div
-              className="flex items-center justify-center"
+              className="flex items-center justify-center transition-transform duration-150"
               style={{
-                // Scale down to fit available space
-                transform: platform === "mobile" ? "scale(0.75)" : "scale(0.65)",
+                transform: `scale(${scale})`,
                 transformOrigin: "center center",
               }}
             >
@@ -211,11 +236,6 @@ export function PrototypePlayer({
                 </BrowserFrame>
               )}
             </div>
-          </div>
-
-          {/* Footer hint */}
-          <div className="text-center py-3 text-white/50 text-sm border-t border-white/10">
-            Click elements to navigate between screens • Press ESC to close
           </div>
         </motion.div>
       )}

@@ -29,6 +29,8 @@ import {
   Camera,
   GitBranch,
   Move,
+  Play,
+  Pencil,
 } from "lucide-react";
 import { captureElement, downloadBlob, toScreenFilename } from "@/lib/utils/screenshot";
 import type { ParsedScreen } from "../StreamingScreenPreview";
@@ -115,10 +117,12 @@ const PhoneMockupContent = memo(function PhoneMockupContent({
   screen,
   isEditing = false,
   streamingHtml,
+  previewMode = false,
 }: {
   screen: ParsedScreen;
   isEditing?: boolean;
   streamingHtml?: string | null;
+  previewMode?: boolean;
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const mockupRef = useRef<HTMLDivElement>(null);
@@ -251,7 +255,7 @@ const PhoneMockupContent = memo(function PhoneMockupContent({
             className="w-full h-full border-0"
             title={screen.name}
             sandbox="allow-scripts allow-same-origin"
-            style={{ pointerEvents: "none" }}
+            style={{ pointerEvents: previewMode ? "auto" : "none" }}
           />
         </div>
 
@@ -312,10 +316,12 @@ const BrowserMockupContent = memo(function BrowserMockupContent({
   screen,
   isEditing = false,
   streamingHtml,
+  previewMode = false,
 }: {
   screen: ParsedScreen;
   isEditing?: boolean;
   streamingHtml?: string | null;
+  previewMode?: boolean;
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const mockupRef = useRef<HTMLDivElement>(null);
@@ -460,7 +466,7 @@ const BrowserMockupContent = memo(function BrowserMockupContent({
             className="w-full h-full border-0"
             title={screen.name}
             sandbox="allow-scripts allow-same-origin"
-            style={{ pointerEvents: "none" }}
+            style={{ pointerEvents: previewMode ? "auto" : "none" }}
           />
         </div>
       </div>
@@ -782,6 +788,7 @@ const DraggableScreen = memo(function DraggableScreen({
   onDrag,
   onDragEnd,
   canvasScale,
+  disabled = false,
 }: {
   children: ReactNode;
   screenName: string;
@@ -793,12 +800,15 @@ const DraggableScreen = memo(function DraggableScreen({
   onDrag: (screenName: string, deltaX: number, deltaY: number) => void;
   onDragEnd: (screenName: string, deltaX: number, deltaY: number) => void;
   canvasScale: number;
+  disabled?: boolean;
 }) {
   const [isDragging, setIsDragging] = useState(false);
   const initialDeltaRef = useRef({ x: deltaX, y: deltaY });
 
   const bind = useDrag(
     ({ movement: [mx, my], first, last }) => {
+      if (disabled) return;
+
       if (first) {
         // Store the initial delta at drag start
         initialDeltaRef.current = { x: deltaX, y: deltaY };
@@ -825,6 +835,7 @@ const DraggableScreen = memo(function DraggableScreen({
     },
     {
       filterTaps: true,
+      enabled: !disabled,
     }
   );
 
@@ -835,8 +846,12 @@ const DraggableScreen = memo(function DraggableScreen({
   return (
     <div
       {...bind()}
-      className={`absolute flex flex-col items-center gap-3 touch-none ${
-        isDragging ? "cursor-grabbing z-50" : "cursor-grab"
+      className={`absolute flex flex-col items-center gap-3 ${
+        disabled
+          ? "cursor-default"
+          : isDragging
+          ? "cursor-grabbing z-50 touch-none"
+          : "cursor-grab touch-none"
       }`}
       style={{
         left: finalX,
@@ -873,6 +888,7 @@ export function PrototypeCanvas({
 
   const [transform, setTransform] = useState({ x: 80, y: 80, scale: initialScale });
   const [showFlows, setShowFlows] = useState(true);
+  const [previewMode, setPreviewMode] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Position overrides for dragged screens
@@ -1104,6 +1120,31 @@ export function PrototypeCanvas({
           <>
             {/* Controls */}
             <div className="absolute bottom-4 right-4 z-10 flex items-center gap-2 bg-white rounded-lg shadow-lg p-1 border border-[#E8E4E0]">
+              {/* Preview/Edit mode toggle */}
+              <button
+                onClick={() => setPreviewMode(!previewMode)}
+                className={`p-2 rounded transition-colors flex items-center gap-1.5 ${
+                  previewMode
+                    ? "text-green-600 bg-green-50"
+                    : "text-[#6B6B6B] hover:text-[#1A1A1A] hover:bg-[#F5F2EF]"
+                }`}
+                title={previewMode ? "Switch to Edit mode (drag screens)" : "Switch to Preview mode (interact with screens)"}
+              >
+                {previewMode ? (
+                  <>
+                    <Play className="w-4 h-4" />
+                    <span className="text-xs font-medium">Preview</span>
+                  </>
+                ) : (
+                  <>
+                    <Pencil className="w-4 h-4" />
+                    <span className="text-xs font-medium">Edit</span>
+                  </>
+                )}
+              </button>
+
+              <div className="w-px h-6 bg-[#E8E4E0]" />
+
               {/* Reset positions (only show if there are overrides) */}
               {hasPositionOverrides && (
                 <>
@@ -1200,6 +1241,7 @@ export function PrototypeCanvas({
                       onDrag={handleDrag}
                       onDragEnd={handleDragEnd}
                       canvasScale={transform.scale}
+                      disabled={previewMode}
                     >
                       {isMobilePlatform ? (
                         <PhoneMockupContent
@@ -1211,6 +1253,7 @@ export function PrototypeCanvas({
                             isEditingExistingScreen,
                             currentStreamingHtml
                           )}
+                          previewMode={previewMode}
                         />
                       ) : (
                         <BrowserMockupContent
@@ -1222,6 +1265,7 @@ export function PrototypeCanvas({
                             isEditingExistingScreen,
                             currentStreamingHtml
                           )}
+                          previewMode={previewMode}
                         />
                       )}
                     </DraggableScreen>
