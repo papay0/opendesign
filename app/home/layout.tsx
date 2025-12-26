@@ -33,14 +33,14 @@ export default function AuthenticatedLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const isProjectPage = pathname?.includes("/projects/");
+  const isProjectPage = pathname?.includes("/projects/") || pathname?.includes("/prototypes/");
 
   // Sync user data to Supabase on first visit and get user info
   const { dbUser } = useUserSync();
   const { isBYOKActive } = useBYOK();
   const isFreePlan = !dbUser?.plan || dbUser.plan === "free";
 
-  // Project pages have their own full-screen layout without sidebar
+  // Project/prototype pages have their own full-screen layout without sidebar
   if (isProjectPage) {
     return (
       <AuthCleanupProvider>
