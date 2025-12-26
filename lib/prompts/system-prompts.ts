@@ -51,8 +51,9 @@ const HTML_CSS_RULES = `HTML/CSS RULES:
 - NO React, NO JavaScript, NO event handlers - pure static HTML
 - Include realistic placeholder content (names, dates, numbers, descriptions)`;
 
-const IMAGE_RULES = `IMAGES - USE REAL WORKING URLs:
-You MUST use real, working image URLs from your knowledge. Use URLs you KNOW exist from your training data.
+export const IMAGE_RULES = `IMAGES - USE REAL WORKING URLs:
+
+**🚫 NEVER USE UNSPLASH** - images.unsplash.com and source.unsplash.com URLs often return 404 errors. DO NOT USE THEM.
 
 **For Pokemon** - Use PokeAPI sprites (ALWAYS use these):
    - https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/{number}.png
@@ -66,15 +67,19 @@ You MUST use real, working image URLs from your knowledge. Use URLs you KNOW exi
 **For Profile Avatars** - Use UI Avatars:
    - https://ui-avatars.com/api/?name=John+Doe&size=48&background=random
 
-**For General Photos** - Use Picsum with descriptive seeds:
-   - https://picsum.photos/seed/{descriptive-word}/400/300
-   - Examples: cooking, fitness, nature, office, travel, food, basketball, sports
+**For ALL General Photos** - Use Picsum with descriptive seeds (ALWAYS WORKS):
+   - https://picsum.photos/seed/{descriptive-word}/{width}/{height}
+   - Examples: https://picsum.photos/seed/city/400/300, https://picsum.photos/seed/food/200/200
+   - Any word works as a seed: cooking, fitness, nature, office, travel, neighborhood, street, building
 
 **For Colored Placeholders** - Use Placehold.co:
    - https://placehold.co/400x300/{hex-color}/white?text={Label}
 
-CRITICAL: Only use URLs you are CONFIDENT exist. If unsure, use UI Avatars or Picsum as fallback.
-NEVER use made-up URLs or domains that don't exist.`;
+CRITICAL RULES:
+- NEVER use images.unsplash.com - these URLs will 404
+- NEVER use source.unsplash.com - this service is deprecated
+- ALWAYS use picsum.photos/seed/{word}/{width}/{height} for photos
+- If unsure, use UI Avatars or Picsum - they NEVER fail`;
 
 const ICON_RULES = `ICONS - Use inline SVG:
 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="..."></path></svg>

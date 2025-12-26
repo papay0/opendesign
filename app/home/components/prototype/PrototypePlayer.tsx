@@ -7,9 +7,9 @@
  * allowing users to click through and test navigation.
  */
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Smartphone, Monitor, ExternalLink, Copy, Check } from "lucide-react";
+import { X, Smartphone, Monitor, ExternalLink, Copy, Check, MousePointer2 } from "lucide-react";
 import { useState } from "react";
 
 interface PrototypePlayerProps {
@@ -30,6 +30,18 @@ export function PrototypePlayer({
   prototypeUrl,
 }: PrototypePlayerProps) {
   const [copied, setCopied] = useState(false);
+  const [showHotspots, setShowHotspots] = useState(true);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Send hotspot toggle message to iframe
+  useEffect(() => {
+    if (iframeRef.current?.contentWindow) {
+      iframeRef.current.contentWindow.postMessage(
+        { type: 'toggleHotspots', show: showHotspots },
+        '*'
+      );
+    }
+  }, [showHotspots]);
 
   // Handle ESC key to close
   useEffect(() => {
@@ -64,7 +76,7 @@ export function PrototypePlayer({
 
   const viewport = platform === "mobile"
     ? { width: 390, height: 844 }
-    : { width: 1280, height: 800 };
+    : { width: 1440, height: 900 };
 
   return (
     <AnimatePresence>
@@ -90,6 +102,20 @@ export function PrototypePlayer({
             </div>
 
             <div className="flex items-center gap-2">
+              {/* Hotspots toggle */}
+              <button
+                onClick={() => setShowHotspots(!showHotspots)}
+                className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                  showHotspots
+                    ? 'bg-purple-500/30 text-purple-300 hover:bg-purple-500/40'
+                    : 'bg-white/10 text-white/70 hover:bg-white/20'
+                }`}
+                title="Toggle clickable area highlights"
+              >
+                <MousePointer2 className="w-4 h-4" />
+                Hotspots
+              </button>
+
               {prototypeUrl && (
                 <>
                   <button
@@ -135,13 +161,14 @@ export function PrototypePlayer({
               className="flex items-center justify-center"
               style={{
                 // Scale down to fit available space
-                transform: platform === "mobile" ? "scale(0.85)" : "scale(0.7)",
+                transform: platform === "mobile" ? "scale(0.75)" : "scale(0.65)",
                 transformOrigin: "center center",
               }}
             >
               {platform === "mobile" ? (
                 <MobileFrame>
                   <iframe
+                    ref={iframeRef}
                     srcDoc={prototypeHtml}
                     style={{
                       width: viewport.width,
@@ -151,11 +178,19 @@ export function PrototypePlayer({
                     }}
                     title={`${projectName} Prototype`}
                     sandbox="allow-scripts allow-same-origin"
+                    onLoad={() => {
+                      // Send initial hotspot state after iframe loads
+                      iframeRef.current?.contentWindow?.postMessage(
+                        { type: 'toggleHotspots', show: showHotspots },
+                        '*'
+                      );
+                    }}
                   />
                 </MobileFrame>
               ) : (
                 <BrowserFrame>
                   <iframe
+                    ref={iframeRef}
                     srcDoc={prototypeHtml}
                     style={{
                       width: viewport.width,
@@ -165,6 +200,13 @@ export function PrototypePlayer({
                     }}
                     title={`${projectName} Prototype`}
                     sandbox="allow-scripts allow-same-origin"
+                    onLoad={() => {
+                      // Send initial hotspot state after iframe loads
+                      iframeRef.current?.contentWindow?.postMessage(
+                        { type: 'toggleHotspots', show: showHotspots },
+                        '*'
+                      );
+                    }}
                   />
                 </BrowserFrame>
               )}

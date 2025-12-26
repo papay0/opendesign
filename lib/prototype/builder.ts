@@ -61,7 +61,6 @@ ${indentHtml(screen.html, 4)}
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=${viewport.width}, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <base target="_self">
   <title>${escapeHtml(projectName)} - Prototype</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
@@ -76,17 +75,13 @@ ${indentHtml(screen.html, 4)}
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
 
-    /* Navigation via CSS :target selector */
+    /* All screens hidden by default, JS manages visibility */
     .screen {
       display: none;
       min-height: ${viewport.height}px;
       width: 100%;
     }
-    .screen:target { display: block; }
-
-    /* Default screen (ROOT) - shown when no hash in URL */
-    .screen--default { display: block; }
-    .screen:target ~ .screen--default { display: none; }
+    .screen.active { display: block; }
 
     /* Ensure interactive elements work */
     a { cursor: pointer; text-decoration: none; color: inherit; }
@@ -110,11 +105,30 @@ ${indentHtml(screen.html, 4)}
       transform: scale(0.99);
     }
 
+    /* Always-on hotspot indicators when body.show-hotspots is set */
+    body.show-hotspots [data-flow] {
+      box-shadow: 0 0 0 2px rgba(147, 51, 234, 0.4), 0 0 8px rgba(147, 51, 234, 0.2);
+      position: relative;
+    }
+    body.show-hotspots [data-flow]::after {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border: 2px dashed rgba(147, 51, 234, 0.5);
+      border-radius: inherit;
+      pointer-events: none;
+      animation: hotspotPulse 2s ease-in-out infinite;
+    }
+    @keyframes hotspotPulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+
     /* Scrollable content support */
     .overflow-y-auto { overflow-y: auto; }
     .overflow-y-scroll { overflow-y: scroll; }
 
-    /* Smooth transitions between screens (optional) */
+    /* Smooth transitions between screens */
     .screen {
       animation: fadeIn 0.15s ease-out;
     }
@@ -126,6 +140,67 @@ ${indentHtml(screen.html, 4)}
 </head>
 <body>
 ${screenSections}
+<script>
+  // Navigation handler - keeps navigation within iframe
+  (function() {
+    var defaultScreenId = '${rootScreenId}';
+
+    // Listen for messages from parent (hotspot toggle)
+    window.addEventListener('message', function(e) {
+      if (e.data && e.data.type === 'toggleHotspots') {
+        if (e.data.show) {
+          document.body.classList.add('show-hotspots');
+        } else {
+          document.body.classList.remove('show-hotspots');
+        }
+      }
+    });
+
+    // Enable hotspots by default
+    document.body.classList.add('show-hotspots');
+
+    function showScreen(screenId) {
+      // Hide all screens
+      document.querySelectorAll('.screen').forEach(function(s) {
+        s.classList.remove('active');
+      });
+      // Show target screen
+      var target = document.getElementById(screenId);
+      if (target) {
+        target.classList.add('active');
+        // Scroll to top of screen
+        window.scrollTo(0, 0);
+      }
+    }
+
+    // Show default screen on load
+    showScreen(defaultScreenId);
+
+    // Intercept all clicks on hash links
+    document.addEventListener('click', function(e) {
+      var target = e.target;
+      // Find closest anchor or element with data-flow
+      while (target && target !== document.body) {
+        // Check for data-flow attribute
+        if (target.hasAttribute && target.hasAttribute('data-flow')) {
+          e.preventDefault();
+          e.stopPropagation();
+          showScreen(target.getAttribute('data-flow'));
+          return;
+        }
+        // Check for anchor with hash href
+        if (target.tagName === 'A' && target.getAttribute('href') && target.getAttribute('href').startsWith('#')) {
+          e.preventDefault();
+          e.stopPropagation();
+          var screenId = target.getAttribute('href').substring(1);
+          showScreen(screenId);
+          return;
+        }
+        target = target.parentElement;
+      }
+    }, true);
+  })();
+</script>
 </body>
 </html>`;
 }
