@@ -34,7 +34,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import type { Project } from "@/lib/supabase/types";
 import { PlatformSelector } from "./components/PlatformSelector";
-import { DashboardSkeleton } from "./components/Skeleton";
+import { DashboardSkeleton, ProjectsGridSkeleton } from "./components/Skeleton";
 import { ImageUploadButton } from "./components/ImageUploadButton";
 import { ImageLightbox, ClickableImage } from "./components/ImageLightbox";
 import { ModelSelector, getSelectedModel, type ModelId } from "./components/ModelSelector";
@@ -475,7 +475,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const { dbUser } = useUserSync();
   const { messagesRemaining, bonusMessagesRemaining, isLoading: isSubscriptionLoading } = useSubscription();
-  const { isBYOKActive } = useBYOK();
+  const { isBYOKActive, isInitialized: isBYOKInitialized } = useBYOK();
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -487,14 +487,10 @@ export default function DashboardPage() {
   const pendingPromptProcessedRef = useRef(false);
 
   // Determine if quota is exceeded (no BYOK and no messages remaining in either pool)
-  // Wait for subscription to load before determining - if no API key, we need accurate quota info
   const totalMessagesRemaining = messagesRemaining + (bonusMessagesRemaining || 0);
   const isQuotaExceeded = !isBYOKActive && !isSubscriptionLoading && totalMessagesRemaining <= 0;
   // User can generate if: has API key OR (subscription loaded AND has messages remaining in either pool)
-  // If no API key and subscription is loading, don't assume they can generate
   const userCanGenerate = isBYOKActive || (!isSubscriptionLoading && totalMessagesRemaining > 0);
-  // Show loading state while waiting for subscription (only if no API key)
-  const isCheckingQuota = !isBYOKActive && isSubscriptionLoading;
 
   // Fetch projects on mount
   useEffect(() => {
@@ -631,8 +627,16 @@ export default function DashboardPage() {
     setProjects((prev) => prev.filter((p) => p.id !== projectId));
   };
 
-  // Loading state (also show skeleton while auto-creating from pending prompt)
-  if (!isLoaded || isLoading || isAutoCreating) {
+  // Loading states - separated for independent loading
+  // 1. User state loading: need Clerk user, BYOK status, and subscription (if no BYOK)
+  const isWaitingForSubscription = !isBYOKActive && isSubscriptionLoading;
+  const isUserStateLoading = !isLoaded || !isBYOKInitialized || isWaitingForSubscription;
+
+  // 2. Projects loading: fetching from Supabase (independent of user state)
+  const isProjectsLoading = isLoading;
+
+  // Show full skeleton only while auto-creating OR user state not ready
+  if (isAutoCreating || isUserStateLoading) {
     return <DashboardSkeleton />;
   }
 
@@ -652,23 +656,6 @@ export default function DashboardPage() {
           Create beautiful designs with AI
         </p>
       </motion.div>
-
-      {/* Loading state while checking quota (only when no API key) */}
-      {isCheckingQuota && (
-        <motion.div
-          variants={fadeInUp}
-          initial="hidden"
-          animate="visible"
-          className="mb-6 sm:mb-8"
-        >
-          <div className="bg-white rounded-2xl p-6 border border-[#E8E4E0]">
-            <div className="flex items-center gap-3">
-              <Loader2 className="w-5 h-5 text-[#B8956F] animate-spin" />
-              <span className="text-[#6B6B6B]">Checking your subscription...</span>
-            </div>
-          </div>
-        </motion.div>
-      )}
 
       {/* Quota Exceeded Banner (show when no API key AND no messages remaining) */}
       {isQuotaExceeded && (
@@ -710,41 +697,45 @@ export default function DashboardPage() {
         </>
       )}
 
-      {/* Projects Section */}
-      <div>
-        <h2 className="font-serif text-xl sm:text-2xl text-[#1A1A1A] mb-4 sm:mb-6">Your Projects</h2>
+      {/* Projects Section - loads independently */}
+      {isProjectsLoading ? (
+        <ProjectsGridSkeleton />
+      ) : (
+        <div>
+          <h2 className="font-serif text-xl sm:text-2xl text-[#1A1A1A] mb-4 sm:mb-6">Your Projects</h2>
 
-        {projects.length === 0 ? (
-          <motion.div
-            variants={fadeInUp}
-            initial="hidden"
-            animate="visible"
-            className="text-center py-10 sm:py-12"
-          >
-            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#F5F2EF] flex items-center justify-center mx-auto mb-4">
-              <FolderOpen className="w-7 h-7 sm:w-8 sm:h-8 text-[#D4CFC9]" />
-            </div>
-            <p className="text-sm sm:text-base text-[#6B6B6B] px-4">
-              No projects yet. Describe your app idea above to get started!
-            </p>
-          </motion.div>
-        ) : (
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            animate="visible"
-            className="flex flex-col gap-3 sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 sm:gap-6"
-          >
-            {projects.map((project) => (
-              <ProjectCard
-                key={project.id}
-                project={project}
-                onDelete={handleDeleteProject}
-              />
-            ))}
-          </motion.div>
-        )}
-      </div>
+          {projects.length === 0 ? (
+            <motion.div
+              variants={fadeInUp}
+              initial="hidden"
+              animate="visible"
+              className="text-center py-10 sm:py-12"
+            >
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#F5F2EF] flex items-center justify-center mx-auto mb-4">
+                <FolderOpen className="w-7 h-7 sm:w-8 sm:h-8 text-[#D4CFC9]" />
+              </div>
+              <p className="text-sm sm:text-base text-[#6B6B6B] px-4">
+                No projects yet. Describe your app idea above to get started!
+              </p>
+            </motion.div>
+          ) : (
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              animate="visible"
+              className="flex flex-col gap-3 sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 sm:gap-6"
+            >
+              {projects.map((project) => (
+                <ProjectCard
+                  key={project.id}
+                  project={project}
+                  onDelete={handleDeleteProject}
+                />
+              ))}
+            </motion.div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

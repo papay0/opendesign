@@ -106,6 +106,57 @@ export function DashboardSkeleton() {
   );
 }
 
+// Projects grid skeleton (for independent loading)
+export function ProjectsGridSkeleton() {
+  return (
+    <div>
+      <Skeleton className="h-6 sm:h-8 w-28 sm:w-36 mb-4 sm:mb-6" />
+
+      {/* Mobile skeleton - horizontal cards */}
+      <div className="sm:hidden space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="bg-white border border-[#E8E4E0] rounded-xl p-3 flex items-center gap-3"
+          >
+            <Skeleton className="w-14 h-14 rounded-xl flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <Skeleton className="h-4 w-3/4 mb-1.5" />
+              <Skeleton className="h-3 w-full mb-1.5" />
+              <Skeleton className="h-3 w-16" />
+            </div>
+            <Skeleton className="w-6 h-6 rounded flex-shrink-0" />
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop skeleton - grid */}
+      <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="bg-white border border-[#E8E4E0] rounded-xl sm:rounded-2xl overflow-hidden"
+          >
+            {/* Preview area with emoji */}
+            <div className="aspect-[4/3] bg-[#F5F2EF] flex items-center justify-center border-b border-[#E8E4E0]">
+              <Skeleton className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl" />
+            </div>
+            {/* Content */}
+            <div className="p-3 sm:p-4">
+              <Skeleton className="h-5 w-3/4 mb-1.5 sm:mb-2" />
+              <Skeleton className="h-4 w-full mb-2.5 sm:mb-3" />
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-6 w-6 rounded" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // Project detail page skeleton - Desktop version
 function ProjectSkeletonDesktop() {
   return (
