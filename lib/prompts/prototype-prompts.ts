@@ -116,8 +116,23 @@ Example: href="#screen-settings" data-flow="screen-settings"
 - ONLY add data-flow to screens you are ACTUALLY GENERATING in this response
 - If you create a bottom nav with 5 tabs, you MUST generate all 5 screens
 - NEVER add data-flow pointing to screens that don't exist
-- If you want to show a nav item but aren't generating that screen, make it non-clickable (no href, no data-flow, use text-gray-300 to show it's disabled)
-- Example of disabled nav item: <span class="flex flex-col items-center text-gray-300 opacity-50">...</span>
+
+**NEVER USE href="#":**
+- href="#" causes broken navigation (white screen) - FORBIDDEN
+- If an element looks clickable but doesn't navigate to a screen you're generating:
+  - Use <span> or <div> instead of <a>
+  - Keep the visual styling (colors, hover effects via group-hover)
+  - Add cursor-pointer if it looks interactive but won't navigate
+  - Add opacity-50 or text-gray-400 to hint it's not functional
+
+CORRECT (non-navigating item):
+<span class="flex items-center gap-3 text-slate-300 opacity-50 cursor-default">
+  <svg>...</svg>
+  <span class="text-sm">Coming Soon</span>
+</span>
+
+WRONG (causes white screen):
+<a href="#" class="flex items-center gap-3">...</a>
 
 NAVIGATION EXAMPLES:
 <!-- Bottom navigation bar -->
