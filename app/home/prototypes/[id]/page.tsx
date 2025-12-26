@@ -73,6 +73,7 @@ import {
   ResizableHandle,
 } from "@/components/ui/resizable";
 import type { PlanType } from "@/lib/constants/plans";
+import { PrototypePlayer } from "../../components/prototype/PrototypePlayer";
 
 // ============================================================================
 // Types
@@ -439,6 +440,9 @@ export default function PrototypePage() {
   const [usageLogs, setUsageLogs] = useState<UsageLog[]>([]);
   const [totalSessionCost, setTotalSessionCost] = useState(0);
   const [selectedModel, setSelectedModelState] = useState<ModelId>("gemini-3-flash-preview");
+  const [isPlayerOpen, setIsPlayerOpen] = useState(false);
+  const [playerHtml, setPlayerHtml] = useState<string | null>(null);
+  const [isLoadingPlayer, setIsLoadingPlayer] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const userMessageRef = useRef<Message | null>(null);
 
@@ -467,6 +471,31 @@ export default function PrototypePage() {
         .eq("id", project.id);
     }
   }, [project?.id, user?.id]);
+
+  const handlePlay = useCallback(async () => {
+    if (savedScreens.length === 0) return;
+
+    setIsLoadingPlayer(true);
+    try {
+      const response = await fetch("/api/prototype/build", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to build prototype");
+      }
+
+      const { html } = await response.json();
+      setPlayerHtml(html);
+      setIsPlayerOpen(true);
+    } catch (error) {
+      console.error("Error building prototype:", error);
+    } finally {
+      setIsLoadingPlayer(false);
+    }
+  }, [projectId, savedScreens.length]);
 
   const submitRef = useRef<(() => void) | null>(null);
 
@@ -917,6 +946,19 @@ export default function PrototypePage() {
               <Play className="w-3.5 h-3.5" />
               Prototype
             </div>
+            {/* Play button */}
+            <button
+              onClick={handlePlay}
+              disabled={savedScreens.length === 0 || isLoadingPlayer}
+              className="flex items-center gap-2 px-4 py-2 bg-[#1A1A1A] hover:bg-[#2A2A2A] text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoadingPlayer ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Play className="w-4 h-4 fill-current" />
+              )}
+              Play
+            </button>
             <div className="flex bg-[#F5F2EF] rounded-lg p-1 border border-[#E8E4E0]">
               <button
                 onClick={() => setViewMode("preview")}
@@ -1193,6 +1235,18 @@ export default function PrototypePage() {
         src={lightboxImage}
         onClose={() => setLightboxImage(null)}
       />
+
+      {/* Prototype Player Modal */}
+      {playerHtml && (
+        <PrototypePlayer
+          isOpen={isPlayerOpen}
+          onClose={() => setIsPlayerOpen(false)}
+          prototypeHtml={playerHtml}
+          platform={project?.platform || "mobile"}
+          projectName={project?.name || "Untitled"}
+          prototypeUrl={project?.prototype_url}
+        />
+      )}
     </div>
   );
 }
