@@ -738,14 +738,33 @@ export default function PrototypePage() {
         }
       }
 
-      // Update local state with all parsed screens
-      setSavedScreens(parsedScreens.map(s => ({
-        name: s.name,
-        html: s.html,
-        gridCol: s.gridCol,
-        gridRow: s.gridRow,
-        isRoot: s.isRoot,
-      })));
+      // Update local state by MERGING parsed screens (preserves screens not in this output)
+      setSavedScreens((prevScreens) => {
+        const mergedScreens = [...prevScreens];
+        for (const newScreen of parsedScreens) {
+          const existingIndex = mergedScreens.findIndex(s => s.name === newScreen.name);
+          if (existingIndex >= 0) {
+            // Update existing screen
+            mergedScreens[existingIndex] = {
+              name: newScreen.name,
+              html: newScreen.html,
+              gridCol: newScreen.gridCol,
+              gridRow: newScreen.gridRow,
+              isRoot: newScreen.isRoot,
+            };
+          } else {
+            // Add new screen
+            mergedScreens.push({
+              name: newScreen.name,
+              html: newScreen.html,
+              gridCol: newScreen.gridCol,
+              gridRow: newScreen.gridRow,
+              isRoot: newScreen.isRoot,
+            });
+          }
+        }
+        return mergedScreens;
+      });
 
       // Save debug log
       const { error } = await supabase.from("prototype_debug_logs").insert({
