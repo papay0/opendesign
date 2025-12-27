@@ -233,6 +233,142 @@ Dark mode with neon accents. Deep charcoal (#1A1A2E) background with electric pu
 ];
 
 // ============================================================================
+// Hero Phone Mockups
+// ============================================================================
+
+function HeroPhoneMockup({
+  image,
+  delay,
+  className,
+  rotation = 0,
+  translateY = 0,
+  isHero = false,
+  onClick,
+}: {
+  image: string;
+  delay: number;
+  className?: string;
+  rotation?: number;
+  translateY?: number;
+  isHero?: boolean;
+  onClick?: () => void;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 80, scale: 0.85, rotate: rotation - 5 }}
+      animate={{
+        opacity: 1,
+        y: translateY,
+        scale: 1,
+        rotate: rotation,
+      }}
+      transition={{
+        duration: 1,
+        delay,
+        ease: [0.22, 1, 0.36, 1],
+      }}
+      whileHover={{
+        scale: 1.03,
+        y: translateY - 8,
+        transition: { duration: 0.3 }
+      }}
+      className={`relative cursor-pointer ${className}`}
+      onClick={onClick}
+    >
+      {/* Layered shadow for depth */}
+      <div
+        className="absolute inset-0 rounded-[1.5rem] opacity-20"
+        style={{
+          background: 'linear-gradient(135deg, transparent 0%, rgba(0,0,0,0.3) 100%)',
+          transform: 'translateY(20px) translateX(10px) scale(0.95)',
+          filter: 'blur(20px)',
+        }}
+      />
+
+      {/* Phone Frame */}
+      <div
+        className={`relative bg-gradient-to-br from-[#2A2A2A] to-[#1A1A1A] rounded-[1.5rem] p-[3px] ${
+          isHero
+            ? 'shadow-[0_25px_50px_-12px_rgba(0,0,0,0.35),0_0_0_1px_rgba(255,255,255,0.05)]'
+            : 'shadow-[0_20px_40px_-12px_rgba(0,0,0,0.25)]'
+        }`}
+      >
+        {/* Subtle highlight on bezel */}
+        <div className="absolute inset-0 rounded-[1.5rem] bg-gradient-to-br from-white/10 via-transparent to-transparent pointer-events-none" />
+
+        {/* Screen */}
+        <div className="relative bg-[#FAF8F5] rounded-[1.35rem] overflow-hidden aspect-[390/844]">
+          <img
+            src={image}
+            alt="Generated prototype"
+            className="w-full h-full object-cover object-top"
+          />
+          {/* Screen glare effect */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-transparent pointer-events-none" />
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function HeroPhoneMockups() {
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  const heroImages = [
+    { src: HERO_PHONES.phone2, label: "Travel App" },
+    { src: HERO_PHONES.phone3, label: "Finance App" },
+  ];
+
+  return (
+    <div className="relative w-full h-[420px] lg:h-[480px]">
+      {/* Lightbox */}
+      {lightboxIndex !== null && (
+        <ComparisonLightbox
+          images={heroImages}
+          initialIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+        />
+      )}
+
+      {/* Ambient glow - warm, positioned behind phones */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] blur-[100px] opacity-20 bg-gradient-to-br from-[#B8956F] via-[#D4B896] to-[#E8D4C4] rounded-full pointer-events-none" />
+
+      {/* Secondary subtle glow */}
+      <div className="absolute top-1/3 right-1/4 w-[200px] h-[200px] blur-[80px] opacity-10 bg-[#B8956F] rounded-full pointer-events-none" />
+
+      {/* Phone composition - editorial overlap */}
+      <div className="relative w-full h-full flex items-center justify-center">
+
+        {/* Back phone - Finance (peek from behind right) */}
+        <div className="absolute right-0 lg:right-4 top-1/2 -translate-y-1/2">
+          <HeroPhoneMockup
+            image={HERO_PHONES.phone3}
+            delay={0.7}
+            rotation={12}
+            translateY={20}
+            className="w-32 lg:w-40"
+            onClick={() => setLightboxIndex(1)}
+          />
+        </div>
+
+        {/* Hero phone - Travel (front and center-left) */}
+        <div className="absolute left-1/2 -translate-x-[65%] lg:-translate-x-[60%] top-1/2 -translate-y-1/2 z-10">
+          <HeroPhoneMockup
+            image={HERO_PHONES.phone2}
+            delay={0.5}
+            rotation={-3}
+            translateY={0}
+            isHero
+            className="w-40 lg:w-52"
+            onClick={() => setLightboxIndex(0)}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
 // Header
 // ============================================================================
 
@@ -446,105 +582,112 @@ function HeroSection() {
   };
 
   return (
-    <section className="min-h-screen flex flex-col items-center justify-center px-6 pt-16 pb-8">
-      <div className="max-w-5xl mx-auto text-center">
-        {/* Open Source Badge */}
-        <motion.a
-          href="https://github.com/papay0/opendesign"
-          target="_blank"
-          rel="noopener noreferrer"
-          variants={fadeIn}
-          initial="hidden"
-          animate="visible"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#E8E4E0] bg-white/50 text-sm text-[#6B6B6B] hover:text-[#1A1A1A] hover:border-[#1A1A1A] transition-all mb-10"
-        >
-          <Github className="w-4 h-4" />
-          Open Source
-          <ArrowRight className="w-3 h-3" />
-        </motion.a>
-
-        {/* The Manifesto */}
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={staggerContainer}
-          className="mb-6"
-        >
-          <motion.h1 variants={letterReveal} className="mb-1">
-            <span className="block font-serif text-6xl md:text-7xl lg:text-8xl text-[#1A1A1A] tracking-tight">
-              Ideate.
-            </span>
-          </motion.h1>
-          <motion.h1 variants={letterReveal}>
-            <span className="block font-sans text-6xl md:text-7xl lg:text-8xl text-[#B8956F] font-bold tracking-tight">
-              Build.
-            </span>
-          </motion.h1>
-        </motion.div>
-
-        {/* Subtext */}
-        <motion.p
-          variants={slideUp}
-          initial="hidden"
-          animate="visible"
-          transition={{ delay: 0.4 }}
-          className="text-lg md:text-xl text-[#6B6B6B] mb-10 max-w-lg mx-auto leading-relaxed"
-        >
-          Describe your app in words.
-          <br />
-          Watch it become real.
-        </motion.p>
-
-        {/* Input Form */}
-        <motion.form
-          variants={slideUp}
-          initial="hidden"
-          animate="visible"
-          transition={{ delay: 0.6 }}
-          onSubmit={handleSubmit}
-          className="w-full max-w-2xl mx-auto mb-6"
-        >
-          <div className="bg-white border border-[#E8E4E0] rounded-2xl p-2 shadow-lg shadow-[#E8E4E0]/50">
-            <textarea
-              ref={textareaRef}
-              value={prompt}
-              onChange={handlePromptChange}
-              placeholder="What will you build?"
-              rows={3}
-              className="w-full bg-transparent text-[#1A1A1A] placeholder-[#9A9A9A] text-lg px-4 py-3 resize-none focus:outline-none"
-            />
-            <div className="flex items-center justify-between px-2 pb-1">
-              <PlatformSelector selected={platform} onChange={setPlatform} />
-              <button
-                type="submit"
-                disabled={isStreaming}
-                className="flex items-center gap-2 bg-[#B8956F] text-white font-medium px-5 py-2.5 rounded-xl hover:bg-[#A6845F] transition-colors disabled:opacity-50"
+    <section className="px-6 md:px-12 lg:px-16 pt-24 pb-16 overflow-hidden">
+      <div className="max-w-6xl mx-auto">
+        {/* Two-column hero: Content left, Phones right */}
+        <div className="grid lg:grid-cols-[1.1fr_1fr] gap-8 lg:gap-12 items-center">
+          {/* Left Column - Manifesto + Input */}
+          <div>
+            {/* Badges */}
+            <motion.div
+              variants={fadeIn}
+              initial="hidden"
+              animate="visible"
+              className="flex flex-wrap items-center gap-3 mb-8"
+            >
+              <a
+                href="https://github.com/papay0/opendesign"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#E8E4E0] bg-white/50 text-sm text-[#6B6B6B] hover:text-[#1A1A1A] hover:border-[#1A1A1A] transition-all"
               >
-                Build it
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </motion.form>
+                <Github className="w-4 h-4" />
+                Open Source
+                <ArrowRight className="w-3 h-3" />
+              </a>
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#E8E4E0] bg-white/50 text-sm text-[#6B6B6B]">
+                <Sparkles className="w-4 h-4 text-[#B8956F]" />
+                1,000+ prototypes created
+              </span>
+            </motion.div>
 
-        {/* Speed Badge */}
-        <motion.div
-          variants={fadeIn}
-          initial="hidden"
-          animate="visible"
-          transition={{ delay: 0.7 }}
-          className="mb-10 inline-flex items-center gap-2 text-sm text-[#6B6B6B]"
-        >
-          <span className="w-2 h-2 bg-[#28C840] rounded-full animate-pulse" />
-          First result in 5 seconds
-        </motion.div>
+            {/* The Manifesto */}
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={staggerContainer}
+              className="mb-8"
+            >
+              <motion.h1 variants={letterReveal} className="mb-2">
+                <span className="block font-serif text-6xl md:text-7xl lg:text-8xl text-[#1A1A1A] tracking-tight">
+                  Ideate.
+                </span>
+              </motion.h1>
+              <motion.h1 variants={letterReveal}>
+                <span className="block font-sans text-6xl md:text-7xl lg:text-8xl text-[#B8956F] font-bold tracking-tight">
+                  Build.
+                </span>
+              </motion.h1>
+            </motion.div>
+
+            {/* Subtext */}
+            <motion.p
+              variants={slideUp}
+              initial="hidden"
+              animate="visible"
+              transition={{ delay: 0.4 }}
+              className="text-lg md:text-xl text-[#6B6B6B] leading-relaxed max-w-md mb-8"
+            >
+              Describe your app idea.
+              <br />
+              Get a working prototype in seconds.
+            </motion.p>
+
+            {/* Input Form */}
+            <motion.form
+              variants={slideUp}
+              initial="hidden"
+              animate="visible"
+              transition={{ delay: 0.5 }}
+              onSubmit={handleSubmit}
+              className="w-full max-w-lg"
+            >
+              <div className="bg-white border border-[#E8E4E0] rounded-2xl p-2 shadow-lg shadow-[#E8E4E0]/50">
+                <textarea
+                  ref={textareaRef}
+                  value={prompt}
+                  onChange={handlePromptChange}
+                  placeholder="What will you build?"
+                  rows={3}
+                  className="w-full bg-transparent text-[#1A1A1A] placeholder-[#9A9A9A] text-lg px-4 py-3 resize-none focus:outline-none"
+                />
+                <div className="flex items-center justify-between px-2 pb-1">
+                  <PlatformSelector selected={platform} onChange={setPlatform} />
+                  <button
+                    type="submit"
+                    disabled={isStreaming}
+                    className="flex items-center gap-2 bg-[#B8956F] text-white font-medium px-5 py-2.5 rounded-xl hover:bg-[#A6845F] transition-colors disabled:opacity-50"
+                  >
+                    Build it
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </motion.form>
+          </div>
+
+          {/* Right Column - Phone Mockups (hidden on mobile) */}
+          <div className="hidden lg:flex justify-center lg:justify-end">
+            <HeroPhoneMockups />
+          </div>
+        </div>
 
         {/* Inspiration Cards */}
         <motion.div
           variants={staggerContainer}
           initial="hidden"
           animate="visible"
-          className="mt-4"
+          className="mt-16"
         >
           <p className="text-sm text-[#9A9A9A] mb-4 flex items-center justify-center gap-2">
             <Sparkles className="w-4 h-4 text-[#B8956F]" />
@@ -627,7 +770,7 @@ function TransformationSection() {
               Your idea
             </div>
             <p className="font-serif text-2xl md:text-3xl text-[#1A1A1A] leading-relaxed italic">
-              &ldquo;A fitness app with workout tracking, progress charts, and achievement badges&rdquo;
+              &ldquo;A fitness app with activity dashboard and daily health tracking&rdquo;
             </p>
           </motion.div>
 
@@ -949,10 +1092,10 @@ function ComparisonSection() {
           className="text-center mb-16"
         >
           <h2 className="font-serif text-4xl md:text-5xl text-[#1A1A1A] tracking-tight mb-4">
-            Ideas deserve better than waiting
+            Design that stands out
           </h2>
           <p className="text-lg text-[#6B6B6B] max-w-xl mx-auto">
-            Same prompt, different tools. See the difference.
+            Same prompt. Better design. 10x faster.
           </p>
         </motion.div>
 
@@ -1015,13 +1158,14 @@ function ComparisonSection() {
           viewport={{ once: true, margin: "-100px" }}
           className="mb-20"
         >
-          <div className="flex items-center justify-center gap-3 mb-10">
-            <div className="h-px flex-1 bg-[#E8E4E0]" />
-            <div className="flex items-center gap-3 bg-white border border-[#E8E4E0] rounded-full px-5 py-2">
+          {/* Prompt label */}
+          <div className="flex justify-center mb-8">
+            <div className="inline-flex items-center gap-3 bg-white border border-[#E8E4E0] rounded-full px-6 py-3 shadow-sm">
               <Smartphone className="w-4 h-4 text-[#6B6B6B]" />
-              <span className="text-sm font-medium text-[#1A1A1A]">Mobile App</span>
+              <span className="text-sm text-[#6B6B6B]">Mobile App</span>
+              <span className="text-[#D4CFC9]">•</span>
+              <code className="text-sm font-mono text-[#1A1A1A]">&ldquo;Music streaming app&rdquo;</code>
             </div>
-            <div className="h-px flex-1 bg-[#E8E4E0]" />
           </div>
 
           <div className="flex flex-wrap justify-center items-end gap-6 md:gap-10">
@@ -1057,13 +1201,14 @@ function ComparisonSection() {
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
         >
-          <div className="flex items-center justify-center gap-3 mb-10">
-            <div className="h-px flex-1 bg-[#E8E4E0]" />
-            <div className="flex items-center gap-3 bg-white border border-[#E8E4E0] rounded-full px-5 py-2">
+          {/* Prompt label */}
+          <div className="flex justify-center mb-8">
+            <div className="inline-flex items-center gap-3 bg-white border border-[#E8E4E0] rounded-full px-6 py-3 shadow-sm">
               <Monitor className="w-4 h-4 text-[#6B6B6B]" />
-              <span className="text-sm font-medium text-[#1A1A1A]">Desktop Website</span>
+              <span className="text-sm text-[#6B6B6B]">Desktop Website</span>
+              <span className="text-[#D4CFC9]">•</span>
+              <code className="text-sm font-mono text-[#1A1A1A]">&ldquo;Recipe collection website&rdquo;</code>
             </div>
-            <div className="h-px flex-1 bg-[#E8E4E0]" />
           </div>
 
           <div className="grid md:grid-cols-[3fr_2fr] gap-6 items-center max-w-5xl mx-auto">
@@ -1159,70 +1304,6 @@ function BuildersSection() {
                   </motion.p>
                 )}
               </AnimatePresence>
-            </motion.div>
-          ))}
-        </motion.div>
-      </div>
-    </section>
-  );
-}
-
-// ============================================================================
-// Features Section - Key Capabilities
-// ============================================================================
-
-function FeaturesSection() {
-  const features = [
-    {
-      icon: MousePointerClick,
-      title: "Real Navigation",
-      description: "Click buttons, tap links, navigate between screens. Your prototype works like the real thing.",
-    },
-    {
-      icon: Play,
-      title: "Play Mode",
-      description: "Enter full-screen mode and experience your app. Find UX issues before writing code.",
-    },
-    {
-      icon: Sparkles,
-      title: "Live Generation",
-      description: "Watch screens appear in real-time as AI builds them. No waiting, no refreshing.",
-    },
-  ];
-
-  return (
-    <section className="py-24 px-6 bg-[#FAF8F5]">
-      <div className="max-w-5xl mx-auto">
-        <motion.div
-          variants={slideUp}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-          className="text-center mb-16"
-        >
-          <h2 className="font-serif text-4xl md:text-5xl text-[#1A1A1A] tracking-tight mb-4">
-            Prototypes that feel real
-          </h2>
-        </motion.div>
-
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-          className="grid md:grid-cols-3 gap-8"
-        >
-          {features.map((feature) => (
-            <motion.div
-              key={feature.title}
-              variants={slideUp}
-              className="bg-white border border-[#E8E4E0] rounded-2xl p-8 hover:shadow-md transition-all"
-            >
-              <div className="w-12 h-12 rounded-xl bg-[#FFF8F0] border border-[#F5E6D3] flex items-center justify-center mb-6">
-                <feature.icon className="w-6 h-6 text-[#B8956F]" />
-              </div>
-              <h3 className="font-serif text-xl text-[#1A1A1A] mb-3">{feature.title}</h3>
-              <p className="text-[#6B6B6B] leading-relaxed">{feature.description}</p>
             </motion.div>
           ))}
         </motion.div>
@@ -1605,7 +1686,6 @@ export default function LandingPage() {
         <ProcessSection />
         <ComparisonSection />
         <BuildersSection />
-        <FeaturesSection />
         <PricingSection />
         <CTASection />
       </main>
