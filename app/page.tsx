@@ -1317,8 +1317,8 @@ function BuildersSection() {
 
 function PricingSection() {
   const [isAnnual, setIsAnnual] = useState(true);
-  const annualTotal = PLANS.pro.price * 10;
-  const annualPrice = annualTotal / 12;
+  const annualTotal = Math.round(PLANS.pro.price * 12 * 0.8); // 20% off = $192/year
+  const annualPrice = annualTotal / 12; // $16/month
 
   return (
     <section id="pricing" className="py-24 px-6 bg-[#F5F2EF]">

@@ -224,8 +224,8 @@ function SubscriptionSection() {
 
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  const annualTotal = PLANS.pro.price * 10;
-  const annualPrice = annualTotal / 12;
+  const annualTotal = Math.round(PLANS.pro.price * 12 * 0.8); // 20% off = $192/year
+  const annualPrice = annualTotal / 12; // $16/month
 
   const handleUpgrade = async (interval: BillingInterval) => {
     setActionLoading(interval);
@@ -409,7 +409,7 @@ function SubscriptionSection() {
             <div className="flex items-center gap-2 mb-6">
               <span className="text-sm text-[#6B6459]">${annualTotal}/year</span>
               <span className="bg-green-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                Save $30
+                Save 20%
               </span>
             </div>
 

@@ -18,8 +18,8 @@ export function UpgradeModal({ isOpen, onClose, reason = "voluntary" }: UpgradeM
   const [isLoading, setIsLoading] = useState<"pro" | "messages" | null>(null);
   const [isAnnual, setIsAnnual] = useState(true);
 
-  const annualTotal = PLANS.pro.price * 10; // $150/year
-  const annualPrice = annualTotal / 12; // $12.50/month
+  const annualTotal = Math.round(PLANS.pro.price * 12 * 0.8); // 20% off = $192/year
+  const annualPrice = annualTotal / 12; // $16/month
 
   const handleUpgradeToPro = async () => {
     setIsLoading("pro");
@@ -111,7 +111,7 @@ export function UpgradeModal({ isOpen, onClose, reason = "voluntary" }: UpgradeM
                     <span className={`text-sm font-medium ${isAnnual ? 'text-[#3D3A35]' : 'text-[#6B6459]'}`}>
                       Annual
                       <span className="ml-1 text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">
-                        Save 17%
+                        Save 20%
                       </span>
                     </span>
                   </div>

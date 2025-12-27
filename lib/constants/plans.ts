@@ -36,7 +36,7 @@ export const PLANS: Record<PlanType, Plan> = {
   pro: {
     id: 'pro',
     name: 'Pro',
-    price: 15,
+    price: 20,
     messagesPerMonth: 50,
     allowedModels: [
       'gemini-3-flash-preview',
