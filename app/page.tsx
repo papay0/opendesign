@@ -406,11 +406,13 @@ function HeroPhoneMockup({
   delay,
   className,
   rotation = 0,
+  onClick,
 }: {
   image: string;
   delay: number;
   className?: string;
   rotation?: number;
+  onClick?: () => void;
 }) {
   return (
     <motion.div
@@ -421,8 +423,10 @@ function HeroPhoneMockup({
         delay,
         ease: [0.22, 1, 0.36, 1],
       }}
+      whileHover={{ scale: 1.02 }}
       className={`relative ${className}`}
       style={{ transform: `rotate(${rotation}deg)` }}
+      onClick={onClick}
     >
       {/* Phone Frame */}
       <div className="relative bg-[#1A1A1A] rounded-[2.5rem] p-2 shadow-2xl">
@@ -440,50 +444,77 @@ function HeroPhoneMockup({
 }
 
 function HeroPhoneMockups() {
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  const heroImages = [
+    { src: HERO_PHONES.phone1, label: "Fitness App" },
+    { src: HERO_PHONES.phone2, label: "Travel App" },
+    { src: HERO_PHONES.phone3, label: "Finance App" },
+  ];
+
   return (
-    <div className="relative w-full h-[500px] md:h-[580px] lg:h-[620px]">
-      {/* Ambient glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] blur-3xl opacity-20 bg-gradient-to-br from-[#B8956F] via-[#D4B896] to-[#E8D4C4] rounded-full" />
-
-      {/* Phone arrangement - asymmetric, overlapping */}
-      <div className="relative w-full h-full flex items-center justify-center">
-        {/* Back-left phone - tilted, slightly behind */}
-        <HeroPhoneMockup
-          image={HERO_PHONES.phone1}
-          delay={0.5}
-          rotation={-6}
-          className="absolute w-44 md:w-52 lg:w-56 left-0 md:left-4 lg:left-8 top-8 z-10 opacity-90"
+    <div className="relative w-full">
+      {/* Lightbox */}
+      {lightboxIndex !== null && (
+        <ComparisonLightbox
+          images={heroImages}
+          initialIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
         />
+      )}
 
-        {/* Center phone - hero, front and center */}
-        <HeroPhoneMockup
-          image={HERO_PHONES.phone2}
-          delay={0.3}
-          rotation={0}
-          className="absolute w-52 md:w-60 lg:w-64 z-30"
-        />
+      {/* Ambient glow - centered behind phones */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] blur-3xl opacity-15 bg-gradient-to-br from-[#B8956F] via-[#D4B896] to-[#E8D4C4] rounded-full pointer-events-none" />
 
-        {/* Back-right phone - tilted opposite */}
-        <HeroPhoneMockup
-          image={HERO_PHONES.phone3}
-          delay={0.7}
-          rotation={6}
-          className="absolute w-44 md:w-52 lg:w-56 right-0 md:right-4 lg:right-8 top-8 z-10 opacity-90"
-        />
+      {/* Phone arrangement - stepped cascade, fully visible */}
+      {/* Mobile: single centered phone | Tablet: 2 phones | Desktop: 3 phones */}
+      <div className="flex items-end justify-center gap-4 md:gap-6 lg:gap-8 px-4">
+
+        {/* Left phone - hidden on mobile, visible on tablet+ */}
+        <div className="hidden md:block">
+          <HeroPhoneMockup
+            image={HERO_PHONES.phone1}
+            delay={0.5}
+            rotation={-3}
+            className="w-36 lg:w-44 mb-8 cursor-pointer"
+            onClick={() => setLightboxIndex(0)}
+          />
+        </div>
+
+        {/* Center phone - hero, always visible, largest */}
+        <div className="flex flex-col items-center">
+          <HeroPhoneMockup
+            image={HERO_PHONES.phone2}
+            delay={0.3}
+            rotation={0}
+            className="w-52 md:w-56 lg:w-64 cursor-pointer"
+            onClick={() => setLightboxIndex(1)}
+          />
+          {/* Badge directly under center phone */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.2, duration: 0.5 }}
+            className="mt-6 bg-white/90 backdrop-blur-sm border border-[#E8E4E0] rounded-full px-5 py-2 shadow-lg"
+          >
+            <span className="text-sm font-medium text-[#6B6B6B] flex items-center gap-2">
+              <span className="w-2 h-2 bg-[#28C840] rounded-full animate-pulse" />
+              Generated in seconds
+            </span>
+          </motion.div>
+        </div>
+
+        {/* Right phone - hidden on mobile, visible on tablet+ */}
+        <div className="hidden md:block">
+          <HeroPhoneMockup
+            image={HERO_PHONES.phone3}
+            delay={0.7}
+            rotation={3}
+            className="w-36 lg:w-44 mb-16 cursor-pointer"
+            onClick={() => setLightboxIndex(2)}
+          />
+        </div>
       </div>
-
-      {/* Floating badge */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.2, duration: 0.5 }}
-        className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-sm border border-[#E8E4E0] rounded-full px-5 py-2 shadow-lg z-40"
-      >
-        <span className="text-sm font-medium text-[#6B6B6B] flex items-center gap-2">
-          <span className="w-2 h-2 bg-[#28C840] rounded-full animate-pulse" />
-          Generated in seconds
-        </span>
-      </motion.div>
     </div>
   );
 }
@@ -890,9 +921,9 @@ function ComparisonLightbox({
         <ArrowRight className="w-8 h-8" />
       </button>
 
-      {/* Image container */}
+      {/* Image container - fullscreen image */}
       <div
-        className="relative max-w-[90vw] max-h-[85vh] flex flex-col items-center"
+        className="relative flex flex-col items-center px-4"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Label */}
@@ -904,20 +935,16 @@ function ComparisonLightbox({
           {images[currentIndex].label}
         </div>
 
-        {/* Phone mockup in lightbox */}
-        <div className="relative bg-[#1A1A1A] rounded-[3rem] p-3 shadow-2xl">
-          <div className="relative bg-[#FAF8F5] rounded-[2.5rem] overflow-hidden w-[300px] md:w-[350px] aspect-[390/844]">
-            <motion.img
-              key={currentIndex}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.2 }}
-              src={images[currentIndex].src}
-              alt={images[currentIndex].label}
-              className="w-full h-full object-cover object-top"
-            />
-          </div>
-        </div>
+        {/* Full screenshot - no phone frame */}
+        <motion.img
+          key={currentIndex}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.2 }}
+          src={images[currentIndex].src}
+          alt={images[currentIndex].label}
+          className="max-h-[80vh] max-w-[90vw] object-contain rounded-2xl shadow-2xl"
+        />
 
         {/* Dots indicator */}
         <div className="flex gap-2 mt-6">
@@ -992,9 +1019,9 @@ function DesktopComparisonLightbox({
         <ArrowRight className="w-8 h-8" />
       </button>
 
-      {/* Image container */}
+      {/* Image container - fullscreen image */}
       <div
-        className="relative max-w-[90vw] max-h-[85vh] flex flex-col items-center"
+        className="relative flex flex-col items-center px-4"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Label */}
@@ -1006,35 +1033,16 @@ function DesktopComparisonLightbox({
           {images[currentIndex].label}
         </div>
 
-        {/* Browser mockup in lightbox */}
-        <div className="bg-white rounded-xl overflow-hidden shadow-2xl max-w-[85vw] md:max-w-[75vw]">
-          {/* Browser Chrome */}
-          <div className="bg-[#F5F2EF] px-4 py-2.5 flex items-center gap-2 border-b border-[#E8E4E0]">
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-[#FF5F57]" />
-              <div className="w-3 h-3 rounded-full bg-[#FEBC2E]" />
-              <div className="w-3 h-3 rounded-full bg-[#28C840]" />
-            </div>
-            <div className="flex-1 ml-3">
-              <div className="bg-white rounded-md px-3 py-1.5 text-xs text-[#9A9A9A] max-w-[180px] border border-[#E8E4E0]">
-                localhost:3000
-              </div>
-            </div>
-          </div>
-
-          {/* Screen */}
-          <div className="aspect-[16/10] bg-[#FAF8F5] overflow-hidden">
-            <motion.img
-              key={currentIndex}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.2 }}
-              src={images[currentIndex].src}
-              alt={images[currentIndex].label}
-              className="w-full h-full object-cover object-top"
-            />
-          </div>
-        </div>
+        {/* Full screenshot - no browser frame */}
+        <motion.img
+          key={currentIndex}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.2 }}
+          src={images[currentIndex].src}
+          alt={images[currentIndex].label}
+          className="max-h-[80vh] max-w-[90vw] object-contain rounded-xl shadow-2xl"
+        />
 
         {/* Dots indicator */}
         <div className="flex gap-2 mt-6">
@@ -1097,11 +1105,19 @@ function ComparisonSection() {
           viewport={{ once: true, margin: "-100px" }}
           className="text-center mb-12"
         >
+          {/* Competition badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#1A1A1A] text-white text-sm font-medium mb-6">
+            <span>OpenDesign</span>
+            <span className="text-white/50">vs</span>
+            <span className="text-white/70">v0</span>
+            <span className="text-white/50">vs</span>
+            <span className="text-white/70">Lovable</span>
+          </div>
           <h2 className="font-serif text-4xl md:text-5xl text-[#1A1A1A] tracking-tight mb-4">
-            Same Prompt. Different Results.
+            Same Prompt. Different Tools.
           </h2>
-          <p className="text-lg text-[#6B6B6B]">
-            See how OpenDesign compares to other AI tools.
+          <p className="text-lg text-[#6B6B6B] max-w-2xl mx-auto">
+            We gave the exact same prompt to 3 AI prototyping tools. Here&apos;s what each one generated.
           </p>
         </motion.div>
 
