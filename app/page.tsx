@@ -89,6 +89,9 @@ const staggerContainer = {
 // Data
 // ============================================================================
 
+// Supabase public assets URL
+const SUPABASE_ASSETS = "https://xqpuvtopszitdtittjao.supabase.co/storage/v1/object/public/public-assets/images";
+
 const features = [
   {
     icon: MousePointerClick,
@@ -111,61 +114,107 @@ const features = [
 ];
 
 // ============================================================================
-// Example Prompts with Rich Data
+// Example Prompts with Rich Data - Separate Mobile and Desktop versions
 // ============================================================================
 
 interface ExamplePrompt {
   label: string;
   styleTag: string;
-  description: string;
+  description: {
+    mobile: string;
+    desktop: string;
+  };
   icon: LucideIcon;
-  fullPrompt: string;
+  fullPrompt: {
+    mobile: string;
+    desktop: string;
+  };
 }
 
 const examplePrompts: ExamplePrompt[] = [
   {
     label: "Fitness Tracker",
     styleTag: "Warm Gradients",
-    description: "Activity rings, workout cards, progress charts",
+    description: {
+      mobile: "Activity rings, workout cards, progress charts",
+      desktop: "Dashboard analytics, workout calendar, progress graphs",
+    },
     icon: Dumbbell,
-    fullPrompt: `Personal fitness dashboard. Daily activity rings showing steps, calories burned, and active minutes. Workout history displayed as cards with exercise type icons, duration, and intensity level. Weekly progress line chart with smooth curves. Achievement badges collection and current streak counter with flame icon.
+    fullPrompt: {
+      mobile: `Personal fitness app. Daily activity rings showing steps, calories burned, and active minutes. Workout history displayed as cards with exercise type icons, duration, and intensity level. Weekly progress line chart with smooth curves. Achievement badges collection and current streak counter with flame icon.
 
 Also create the workout detail screen and profile screen.
 
 Warm gradient aesthetic. Soft coral (#FF8A80) and peach gradients transitioning to warm orange. Large rounded progress indicators with satisfying fill animations. Friendly rounded sans-serif typography. Organic blob shapes in background, motivational quotes section.`,
+      desktop: `Personal fitness dashboard website. Hero section with large activity summary showing steps, calories, and active minutes as animated circular progress rings. Left sidebar navigation with user profile avatar. Main content area with workout calendar view showing completed workouts as colored dots. Detailed analytics section with line charts for weekly/monthly trends. Workout library displayed as a filterable grid of exercise cards with hover effects.
+
+Also create the workout detail page and settings page.
+
+Warm gradient aesthetic. Soft coral (#FF8A80) and peach gradients transitioning to warm orange. Large data visualizations with smooth animations. Clean sans-serif typography with generous spacing. Subtle grid background pattern, motivational banner section with gradient overlay.`,
+    },
   },
   {
     label: "Recipe Collection",
     styleTag: "Editorial",
-    description: "Ingredient cards, cooking mode, favorites",
+    description: {
+      mobile: "Ingredient cards, cooking mode, favorites",
+      desktop: "Recipe grid, cooking instructions, meal planning",
+    },
     icon: ChefHat,
-    fullPrompt: `Recipe collection app. Featured recipe hero section with beautiful food photography placeholder and cooking time badge. Ingredient list with quantity badges and checkable items. Step-by-step cooking mode with large readable text, timer widget, and progress indicator. Favorites collection organized in category tabs.
+    fullPrompt: {
+      mobile: `Recipe collection app. Featured recipe hero section with beautiful food photography placeholder and cooking time badge. Ingredient list with quantity badges and checkable items. Step-by-step cooking mode with large readable text, timer widget, and progress indicator. Favorites collection organized in category tabs.
 
 Also create the cooking mode screen and shopping list screen.
 
 Editorial magazine aesthetic. Warm cream (#FFF8F0) and terracotta (#C17C60) palette. Elegant serif typography for headings, clean sans-serif for body. Card layouts with generous whitespace and subtle shadows. Sophisticated food photography placeholders with rounded corners.`,
+      desktop: `Recipe collection website. Full-width hero with featured recipe of the day, large food photography placeholder, and elegant overlay text. Navigation bar with category dropdown menus. Main content as a Pinterest-style masonry grid of recipe cards with hover zoom effect. Sidebar with popular tags, cooking time filters, and difficulty levels. Recipe detail layout with two-column design: left side for step-by-step instructions with numbered steps, right side for ingredient checklist with serving size adjuster.
+
+Also create the meal planner page and shopping list page.
+
+Editorial magazine aesthetic. Warm cream (#FFF8F0) and terracotta (#C17C60) palette. Elegant serif typography for headings, clean sans-serif for body. Card layouts with generous whitespace and subtle drop shadows. Sophisticated food photography placeholders with rounded corners. Print-friendly recipe view option.`,
+    },
   },
   {
     label: "Travel Planner",
     styleTag: "Wanderlust",
-    description: "Trip cards, itinerary timeline, packing lists",
+    description: {
+      mobile: "Trip cards, itinerary timeline, packing lists",
+      desktop: "Trip dashboard, interactive map, booking management",
+    },
     icon: Plane,
-    fullPrompt: `Trip planning app. Upcoming trips as cards with destination cover photos, countdown timer, and date range. Day-by-day itinerary displayed as vertical timeline with location pins, time slots, and activity icons. Packing checklist with categorized expandable sections. Budget tracker showing expense breakdown in a donut chart with category colors.
+    fullPrompt: {
+      mobile: `Trip planning app. Upcoming trips as cards with destination cover photos, countdown timer, and date range. Day-by-day itinerary displayed as vertical timeline with location pins, time slots, and activity icons. Packing checklist with categorized expandable sections. Budget tracker showing expense breakdown in a donut chart with category colors.
 
 Also create the day detail screen and expense logging screen.
 
 Vibrant wanderlust aesthetic. Ocean teal (#0097A7) and sunset coral (#FF7043) as primary colors. Polaroid-style photo frames with slight rotation. Handwritten accent font for headings. Map markers, dotted path lines connecting destinations, adventure-themed iconography.`,
+      desktop: `Trip planning website. Dashboard with upcoming trips as large cards with destination cover photos, countdown timers, and quick action buttons. Main trip view with split layout: left panel showing day-by-day itinerary as an interactive timeline, right panel with embedded map showing all locations with connected route lines. Top navigation with trip switcher dropdown. Budget section with expense table, category breakdown charts, and currency converter. Accommodation and flight booking cards with confirmation details.
+
+Also create the explore destinations page and trip sharing page.
+
+Vibrant wanderlust aesthetic. Ocean teal (#0097A7) and sunset coral (#FF7043) as primary colors. Large hero images with parallax scrolling effect. Handwritten accent font for headings. Interactive map with custom styled markers, dotted path animations connecting destinations, adventure-themed iconography throughout.`,
+    },
   },
   {
     label: "Music Player",
     styleTag: "Dark Neon",
-    description: "Now playing, visualizer, playlist grid",
+    description: {
+      mobile: "Now playing, visualizer, playlist grid",
+      desktop: "Full player, library browser, queue management",
+    },
     icon: Music,
-    fullPrompt: `Music streaming app. Now playing screen featuring large album artwork with reflection effect, playback controls with scrubber, and like/shuffle/repeat buttons. Audio waveform visualizer bars animating with the beat. Up next queue as draggable list items. Playlist library displayed as a masonry grid of album art cards.
+    fullPrompt: {
+      mobile: `Music streaming app. Now playing screen featuring large album artwork with reflection effect, playback controls with scrubber, and like/shuffle/repeat buttons. Audio waveform visualizer bars animating with the beat. Up next queue as draggable list items. Playlist library displayed as a masonry grid of album art cards.
 
 Also create the library browse screen and search screen.
 
 Dark mode with neon accents. Deep charcoal (#1A1A2E) background with electric purple (#9D4EDD) and hot pink (#FF006E) gradient accents. Glassmorphic player controls with blur backdrop. Subtle glow effects on active elements. Bold geometric sans-serif typography with high contrast.`,
+      desktop: `Music streaming website. Three-column layout: left sidebar with navigation and playlists, center main content area, right sidebar with queue and lyrics. Now playing bar fixed at bottom with album art thumbnail, track info, playback controls, progress bar, and volume slider. Main view showing artist page with large header image, bio section, popular tracks table with hover play buttons, albums grid, and related artists. Library view with filterable/sortable table of saved tracks.
+
+Also create the playlist detail page and search results page.
+
+Dark mode with neon accents. Deep charcoal (#1A1A2E) background with electric purple (#9D4EDD) and hot pink (#FF006E) gradient accents. Glassmorphic panels with blur backdrop. Subtle glow effects on interactive elements. Audio waveform visualizer in now playing bar. Bold geometric sans-serif typography with high contrast. Smooth hover transitions throughout.`,
+    },
   },
 ];
 
@@ -338,65 +387,104 @@ function Header() {
 // ============================================================================
 
 // ============================================================================
-// Component: Demo Video Browser Mockup
-// Clean browser window frame with the demo video
+// Component: Hero Phone Mockups
+// Showcase beautiful generated prototypes with staggered reveal animation
 // ============================================================================
 
-function DemoVideoMockup() {
+// Hero showcase images - beautiful generated prototypes
+const HERO_PHONES = {
+  // Music app - dark mode, vibrant
+  phone1: `${SUPABASE_ASSETS}/hero-phone-1`,
+  // Fitness app - warm gradients
+  phone2: `${SUPABASE_ASSETS}/hero-phone-2`,
+  // Recipe app - clean, editorial
+  phone3: `${SUPABASE_ASSETS}/hero-phone-3`,
+};
+
+function HeroPhoneMockup({
+  image,
+  delay,
+  className,
+  rotation = 0,
+}: {
+  image: string;
+  delay: number;
+  className?: string;
+  rotation?: number;
+}) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.8, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-      className="relative w-full"
+      initial={{ opacity: 0, y: 60, scale: 0.9 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{
+        duration: 0.8,
+        delay,
+        ease: [0.22, 1, 0.36, 1],
+      }}
+      className={`relative ${className}`}
+      style={{ transform: `rotate(${rotation}deg)` }}
     >
-      {/* Ambient glow behind the browser */}
-      <div className="absolute inset-0 blur-3xl opacity-15 bg-gradient-to-br from-[#B8956F] via-[#D4B896] to-[#E8D4C4] scale-105" />
-
-      {/* Browser Window Frame - with relative positioning for the label */}
-      <div className="relative">
-        <div className="rounded-lg overflow-hidden shadow-2xl border border-[#E8E4E0]">
-          {/* Browser Chrome / Title Bar - Compact */}
-          <div className="bg-[#F5F2EF] px-3 py-2 flex items-center gap-8 border-b border-[#E8E4E0]">
-            {/* Traffic lights */}
-            <div className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-[#FF5F57]" />
-              <div className="w-2.5 h-2.5 rounded-full bg-[#FEBC2E]" />
-              <div className="w-2.5 h-2.5 rounded-full bg-[#28C840]" />
-            </div>
-
-            {/* URL - simple text, no box */}
-            <span className="text-[11px] text-[#6B6B6B]">opendesign.build</span>
-          </div>
-
-          {/* Video content - slightly scaled to crop black bars */}
-          <div className="bg-[#FAF8F5] overflow-hidden">
-            <video
-              autoPlay
-              muted
-              loop
-              playsInline
-              className="w-full aspect-video object-cover scale-[1.04]"
-            >
-              <source
-                src="https://xqpuvtopszitdtittjao.supabase.co/storage/v1/object/public/public-assets/OpenDesign%20Demo.mp4"
-                type="video/mp4"
-              />
-            </video>
-          </div>
+      {/* Phone Frame */}
+      <div className="relative bg-[#1A1A1A] rounded-[2.5rem] p-2 shadow-2xl">
+        {/* Screen */}
+        <div className="relative bg-[#FAF8F5] rounded-[2rem] overflow-hidden aspect-[390/844]">
+          <img
+            src={image}
+            alt="Generated prototype"
+            className="w-full h-full object-cover object-top"
+          />
         </div>
-
-        {/* Floating label - positioned relative to the browser frame */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8, duration: 0.5 }}
-          className="absolute -bottom-5 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-sm border border-[#E8E4E0] rounded-full px-4 py-1.5 shadow-lg z-10"
-        >
-          <span className="text-xs font-medium text-[#6B6B6B]">Live Demo</span>
-        </motion.div>
       </div>
     </motion.div>
+  );
+}
+
+function HeroPhoneMockups() {
+  return (
+    <div className="relative w-full h-[500px] md:h-[580px] lg:h-[620px]">
+      {/* Ambient glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] blur-3xl opacity-20 bg-gradient-to-br from-[#B8956F] via-[#D4B896] to-[#E8D4C4] rounded-full" />
+
+      {/* Phone arrangement - asymmetric, overlapping */}
+      <div className="relative w-full h-full flex items-center justify-center">
+        {/* Back-left phone - tilted, slightly behind */}
+        <HeroPhoneMockup
+          image={HERO_PHONES.phone1}
+          delay={0.5}
+          rotation={-6}
+          className="absolute w-44 md:w-52 lg:w-56 left-0 md:left-4 lg:left-8 top-8 z-10 opacity-90"
+        />
+
+        {/* Center phone - hero, front and center */}
+        <HeroPhoneMockup
+          image={HERO_PHONES.phone2}
+          delay={0.3}
+          rotation={0}
+          className="absolute w-52 md:w-60 lg:w-64 z-30"
+        />
+
+        {/* Back-right phone - tilted opposite */}
+        <HeroPhoneMockup
+          image={HERO_PHONES.phone3}
+          delay={0.7}
+          rotation={6}
+          className="absolute w-44 md:w-52 lg:w-56 right-0 md:right-4 lg:right-8 top-8 z-10 opacity-90"
+        />
+      </div>
+
+      {/* Floating badge */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.2, duration: 0.5 }}
+        className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-sm border border-[#E8E4E0] rounded-full px-5 py-2 shadow-lg z-40"
+      >
+        <span className="text-sm font-medium text-[#6B6B6B] flex items-center gap-2">
+          <span className="w-2 h-2 bg-[#28C840] rounded-full animate-pulse" />
+          Generated in seconds
+        </span>
+      </motion.div>
+    </div>
   );
 }
 
@@ -439,17 +527,17 @@ function HeroSection() {
     setIsStreaming(false);
   }, []);
 
-  // Handle clicking an example card
+  // Handle clicking an example card - uses platform-specific prompt
   const handleExampleClick = useCallback(
     (example: ExamplePrompt) => {
       // Cancel any ongoing streaming
       streamingRef.current.cancelled = true;
 
-      // Focus textarea and start streaming
+      // Focus textarea and start streaming with platform-specific prompt
       textareaRef.current?.focus();
-      streamText(example.fullPrompt);
+      streamText(example.fullPrompt[platform]);
     },
-    [streamText]
+    [streamText, platform]
   );
 
   // Handle user typing - cancels streaming
@@ -573,9 +661,9 @@ function HeroSection() {
             </motion.form>
           </div>
 
-          {/* Right Column - Demo Video in Phone Mockup */}
+          {/* Right Column - Beautiful Phone Mockups showcasing the output */}
           <div className="flex justify-center lg:justify-end">
-            <DemoVideoMockup />
+            <HeroPhoneMockups />
           </div>
         </div>
 
@@ -614,9 +702,9 @@ function HeroSection() {
                       </span>
                     </div>
                   </div>
-                  {/* Description */}
+                  {/* Description - platform-specific */}
                   <p className="text-xs text-[#6B6B6B] line-clamp-2">
-                    {example.description}
+                    {example.description[platform]}
                   </p>
                 </motion.button>
               );
@@ -633,21 +721,18 @@ function HeroSection() {
 // Show OpenDesign vs competitors - Mobile and Desktop
 // ============================================================================
 
-// Placeholder images - replace with real screenshots
-// Using picsum.photos for development placeholders
 const COMPARISON_IMAGES = {
   mobile: {
-    opendesign: "https://picsum.photos/390/844?random=1",
-    v0: "https://picsum.photos/390/844?random=2",
-    lovable: "https://picsum.photos/390/844?random=3",
-    replit: "https://picsum.photos/390/844?random=4",
+    opendesign: `${SUPABASE_ASSETS}/comparison-mobile-opendesign`,
+    v0: `${SUPABASE_ASSETS}/comparison-mobile-v0`,
+    lovable: `${SUPABASE_ASSETS}/comparison-mobile-lovable`,
     prompt: "Music streaming app",
   },
   desktop: {
-    opendesign: "https://picsum.photos/1440/900?random=5",
-    v0: "https://picsum.photos/1440/900?random=6",
-    lovable: "https://picsum.photos/1440/900?random=7",
-    prompt: "Project management dashboard",
+    opendesign: `${SUPABASE_ASSETS}/comparison-desktop-opendesign`,
+    v0: `${SUPABASE_ASSETS}/comparison-desktop-v0`,
+    lovable: `${SUPABASE_ASSETS}/comparison-desktop-lovable`,
+    prompt: "Recipe collection website",
   },
 };
 
@@ -655,16 +740,21 @@ const COMPARISON_IMAGES = {
 function PhoneMockup({
   image,
   label,
-  isHero = false
+  isHero = false,
+  onClick,
 }: {
   image: string;
   label: string;
   isHero?: boolean;
+  onClick?: () => void;
 }) {
   return (
-    <div className={`relative ${isHero ? "" : "opacity-75 hover:opacity-100 transition-opacity"}`}>
+    <div
+      className={`relative cursor-pointer transition-transform hover:scale-[1.02] ${isHero ? "" : "opacity-80 hover:opacity-100"}`}
+      onClick={onClick}
+    >
       {/* Label */}
-      <div className={`absolute -top-2 left-1/2 -translate-x-1/2 z-10 text-xs font-medium px-3 py-0.5 rounded-full ${
+      <div className={`absolute -top-3 left-1/2 -translate-x-1/2 z-10 text-sm font-medium px-4 py-1 rounded-full ${
         isHero
           ? "bg-[#B8956F] text-white"
           : "bg-[#F5F2EF] text-[#6B6B6B] border border-[#E8E4E0]"
@@ -675,15 +765,11 @@ function PhoneMockup({
       {/* Phone Frame */}
       <div className={`relative bg-[#1A1A1A] rounded-[2.5rem] p-2 ${isHero ? "shadow-2xl" : "shadow-lg"}`}>
         {/* Screen */}
-        <div className={`relative bg-[#FAF8F5] rounded-[2rem] overflow-hidden ${isHero ? "aspect-[390/844]" : "aspect-[390/844]"}`}>
+        <div className="relative bg-[#FAF8F5] rounded-[2rem] overflow-hidden aspect-[390/844]">
           <img
             src={image}
             alt={`${label} mobile app output`}
-            className={`w-full h-full object-cover object-top ${isHero ? "" : "grayscale-[30%]"}`}
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-              e.currentTarget.parentElement!.innerHTML = `<div class="w-full h-full flex items-center justify-center text-[#9A9A9A] text-sm"><span>${label}</span></div>`;
-            }}
+            className={`w-full h-full object-cover object-top ${isHero ? "" : "grayscale-[20%]"}`}
           />
         </div>
       </div>
@@ -696,13 +782,20 @@ function BrowserMockup({
   image,
   label,
   isHero = false,
+  compact = false,
+  onClick,
 }: {
   image: string;
   label: string;
   isHero?: boolean;
+  compact?: boolean;
+  onClick?: () => void;
 }) {
   return (
-    <div className={`relative ${isHero ? "" : "opacity-75 hover:opacity-100 transition-opacity"}`}>
+    <div
+      className={`relative cursor-pointer transition-transform hover:scale-[1.01] ${isHero ? "" : "opacity-80 hover:opacity-100"}`}
+      onClick={onClick}
+    >
       {/* Label */}
       <div className={`absolute -top-2.5 left-6 z-10 text-xs font-medium px-3 py-1 rounded-full ${
         isHero
@@ -715,25 +808,25 @@ function BrowserMockup({
       {/* Browser Frame */}
       <div className={`bg-white rounded-xl overflow-hidden border ${isHero ? "border-[#B8956F] border-2 shadow-xl" : "border-[#E8E4E0] shadow-md"}`}>
         {/* Browser Chrome */}
-        <div className="bg-[#F5F2EF] px-4 py-2.5 flex items-center gap-2 border-b border-[#E8E4E0]">
+        <div className={`bg-[#F5F2EF] flex items-center gap-2 border-b border-[#E8E4E0] ${compact ? "px-3 py-1.5" : "px-4 py-2.5"}`}>
           <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-full bg-[#FF5F57]" />
-            <div className="w-3 h-3 rounded-full bg-[#FEBC2E]" />
-            <div className="w-3 h-3 rounded-full bg-[#28C840]" />
+            <div className={`rounded-full bg-[#FF5F57] ${compact ? "w-2 h-2" : "w-3 h-3"}`} />
+            <div className={`rounded-full bg-[#FEBC2E] ${compact ? "w-2 h-2" : "w-3 h-3"}`} />
+            <div className={`rounded-full bg-[#28C840] ${compact ? "w-2 h-2" : "w-3 h-3"}`} />
           </div>
-          <div className="flex-1 ml-3">
-            <div className="bg-white rounded-md px-3 py-1.5 text-xs text-[#9A9A9A] max-w-[180px] border border-[#E8E4E0]">
+          <div className="flex-1 ml-2">
+            <div className={`bg-white rounded-md text-[#9A9A9A] border border-[#E8E4E0] ${compact ? "px-2 py-0.5 text-[10px] max-w-[120px]" : "px-3 py-1.5 text-xs max-w-[180px]"}`}>
               localhost:3000
             </div>
           </div>
         </div>
 
-        {/* Screen */}
-        <div className="aspect-[16/10] bg-[#FAF8F5] overflow-hidden">
+        {/* Screen with proper aspect ratio */}
+        <div className={`bg-[#FAF8F5] overflow-hidden ${compact ? "aspect-[16/9]" : "aspect-[16/10]"}`}>
           <img
             src={image}
             alt={`${label} desktop output`}
-            className={`w-full h-full object-cover object-top ${isHero ? "" : "grayscale-[30%]"}`}
+            className={`w-full h-full object-cover object-top ${isHero ? "" : "grayscale-[20%]"}`}
           />
         </div>
       </div>
@@ -741,9 +834,260 @@ function BrowserMockup({
   );
 }
 
+// Lightbox carousel for comparing screenshots
+function ComparisonLightbox({
+  images,
+  initialIndex,
+  onClose,
+}: {
+  images: { src: string; label: string }[];
+  initialIndex: number;
+  onClose: () => void;
+}) {
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
+
+  const goNext = () => setCurrentIndex((i) => (i + 1) % images.length);
+  const goPrev = () => setCurrentIndex((i) => (i - 1 + images.length) % images.length);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowRight") goNext();
+      if (e.key === "ArrowLeft") goPrev();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+      onClick={onClose}
+    >
+      {/* Close button */}
+      <button
+        onClick={onClose}
+        className="absolute top-6 right-6 text-white/70 hover:text-white transition-colors z-10"
+      >
+        <X className="w-8 h-8" />
+      </button>
+
+      {/* Navigation arrows */}
+      <button
+        onClick={(e) => { e.stopPropagation(); goPrev(); }}
+        className="absolute left-4 md:left-8 text-white/70 hover:text-white transition-colors p-2"
+      >
+        <ArrowRight className="w-8 h-8 rotate-180" />
+      </button>
+      <button
+        onClick={(e) => { e.stopPropagation(); goNext(); }}
+        className="absolute right-4 md:right-8 text-white/70 hover:text-white transition-colors p-2"
+      >
+        <ArrowRight className="w-8 h-8" />
+      </button>
+
+      {/* Image container */}
+      <div
+        className="relative max-w-[90vw] max-h-[85vh] flex flex-col items-center"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Label */}
+        <div className={`mb-4 text-lg font-medium px-6 py-2 rounded-full ${
+          currentIndex === 0
+            ? "bg-[#B8956F] text-white"
+            : "bg-white/10 text-white/90"
+        }`}>
+          {images[currentIndex].label}
+        </div>
+
+        {/* Phone mockup in lightbox */}
+        <div className="relative bg-[#1A1A1A] rounded-[3rem] p-3 shadow-2xl">
+          <div className="relative bg-[#FAF8F5] rounded-[2.5rem] overflow-hidden w-[300px] md:w-[350px] aspect-[390/844]">
+            <motion.img
+              key={currentIndex}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.2 }}
+              src={images[currentIndex].src}
+              alt={images[currentIndex].label}
+              className="w-full h-full object-cover object-top"
+            />
+          </div>
+        </div>
+
+        {/* Dots indicator */}
+        <div className="flex gap-2 mt-6">
+          {images.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentIndex(i)}
+              className={`w-2 h-2 rounded-full transition-colors ${
+                i === currentIndex ? "bg-white" : "bg-white/30"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// Desktop lightbox carousel for comparing screenshots
+function DesktopComparisonLightbox({
+  images,
+  initialIndex,
+  onClose,
+}: {
+  images: { src: string; label: string }[];
+  initialIndex: number;
+  onClose: () => void;
+}) {
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
+
+  const goNext = () => setCurrentIndex((i) => (i + 1) % images.length);
+  const goPrev = () => setCurrentIndex((i) => (i - 1 + images.length) % images.length);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowRight") goNext();
+      if (e.key === "ArrowLeft") goPrev();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+      onClick={onClose}
+    >
+      {/* Close button */}
+      <button
+        onClick={onClose}
+        className="absolute top-6 right-6 text-white/70 hover:text-white transition-colors z-10"
+      >
+        <X className="w-8 h-8" />
+      </button>
+
+      {/* Navigation arrows */}
+      <button
+        onClick={(e) => { e.stopPropagation(); goPrev(); }}
+        className="absolute left-4 md:left-8 text-white/70 hover:text-white transition-colors p-2"
+      >
+        <ArrowRight className="w-8 h-8 rotate-180" />
+      </button>
+      <button
+        onClick={(e) => { e.stopPropagation(); goNext(); }}
+        className="absolute right-4 md:right-8 text-white/70 hover:text-white transition-colors p-2"
+      >
+        <ArrowRight className="w-8 h-8" />
+      </button>
+
+      {/* Image container */}
+      <div
+        className="relative max-w-[90vw] max-h-[85vh] flex flex-col items-center"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Label */}
+        <div className={`mb-4 text-lg font-medium px-6 py-2 rounded-full ${
+          currentIndex === 0
+            ? "bg-[#B8956F] text-white"
+            : "bg-white/10 text-white/90"
+        }`}>
+          {images[currentIndex].label}
+        </div>
+
+        {/* Browser mockup in lightbox */}
+        <div className="bg-white rounded-xl overflow-hidden shadow-2xl max-w-[85vw] md:max-w-[75vw]">
+          {/* Browser Chrome */}
+          <div className="bg-[#F5F2EF] px-4 py-2.5 flex items-center gap-2 border-b border-[#E8E4E0]">
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-[#FF5F57]" />
+              <div className="w-3 h-3 rounded-full bg-[#FEBC2E]" />
+              <div className="w-3 h-3 rounded-full bg-[#28C840]" />
+            </div>
+            <div className="flex-1 ml-3">
+              <div className="bg-white rounded-md px-3 py-1.5 text-xs text-[#9A9A9A] max-w-[180px] border border-[#E8E4E0]">
+                localhost:3000
+              </div>
+            </div>
+          </div>
+
+          {/* Screen */}
+          <div className="aspect-[16/10] bg-[#FAF8F5] overflow-hidden">
+            <motion.img
+              key={currentIndex}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.2 }}
+              src={images[currentIndex].src}
+              alt={images[currentIndex].label}
+              className="w-full h-full object-cover object-top"
+            />
+          </div>
+        </div>
+
+        {/* Dots indicator */}
+        <div className="flex gap-2 mt-6">
+          {images.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentIndex(i)}
+              className={`w-2 h-2 rounded-full transition-colors ${
+                i === currentIndex ? "bg-white" : "bg-white/30"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 function ComparisonSection() {
+  const [lightbox, setLightbox] = useState<{ type: "mobile" | "desktop"; index: number } | null>(null);
+
+  const mobileImages = [
+    { src: COMPARISON_IMAGES.mobile.opendesign, label: "OpenDesign" },
+    { src: COMPARISON_IMAGES.mobile.v0, label: "v0" },
+    { src: COMPARISON_IMAGES.mobile.lovable, label: "Lovable" },
+  ];
+
+  const desktopImages = [
+    { src: COMPARISON_IMAGES.desktop.opendesign, label: "OpenDesign" },
+    { src: COMPARISON_IMAGES.desktop.v0, label: "v0" },
+    { src: COMPARISON_IMAGES.desktop.lovable, label: "Lovable" },
+  ];
+
   return (
     <section className="py-24 px-6 bg-[#F5F2EF]" aria-label="OpenDesign vs Other AI Tools">
+      {/* Mobile Lightbox */}
+      {lightbox?.type === "mobile" && (
+        <ComparisonLightbox
+          images={mobileImages}
+          initialIndex={lightbox.index}
+          onClose={() => setLightbox(null)}
+        />
+      )}
+
+      {/* Desktop Lightbox */}
+      {lightbox?.type === "desktop" && (
+        <DesktopComparisonLightbox
+          images={desktopImages}
+          initialIndex={lightbox.index}
+          onClose={() => setLightbox(null)}
+        />
+      )}
+
       <div className="max-w-6xl mx-auto">
         {/* Section Header */}
         <motion.div
@@ -751,13 +1095,83 @@ function ComparisonSection() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
-          className="text-center mb-16"
+          className="text-center mb-12"
         >
           <h2 className="font-serif text-4xl md:text-5xl text-[#1A1A1A] tracking-tight mb-4">
             Same Prompt. Different Results.
           </h2>
           <p className="text-lg text-[#6B6B6B]">
             See how OpenDesign compares to other AI tools.
+          </p>
+        </motion.div>
+
+        {/* Generation Time Comparison - Visual Bar Chart */}
+        <motion.div
+          variants={slideUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          className="mb-16 max-w-3xl mx-auto"
+        >
+          <p className="text-center text-sm font-medium text-[#6B6B6B] mb-6 uppercase tracking-wide">
+            Time to First Result
+          </p>
+
+          <div className="space-y-3">
+            {/* OpenDesign - 5 seconds = tiny bar */}
+            <div className="flex items-center gap-4">
+              <div className="w-24 text-right">
+                <span className="font-medium text-[#1A1A1A]">OpenDesign</span>
+              </div>
+              <div className="flex-1 h-10 bg-[#E8E4E0] rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-[#B8956F] rounded-full flex items-center justify-end pr-3"
+                  style={{ width: '3%' }}
+                >
+                </div>
+              </div>
+              <div className="w-28 text-left">
+                <span className="text-lg font-bold text-[#B8956F]">5 sec</span>
+              </div>
+            </div>
+
+            {/* v0 - 2 minutes = 120 seconds = 67% bar */}
+            <div className="flex items-center gap-4">
+              <div className="w-24 text-right">
+                <span className="text-[#6B6B6B]">v0</span>
+              </div>
+              <div className="flex-1 h-10 bg-[#E8E4E0] rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-[#9A9A9A] rounded-full"
+                  style={{ width: '67%' }}
+                >
+                </div>
+              </div>
+              <div className="w-28 text-left">
+                <span className="text-lg font-bold text-[#6B6B6B]">2 min</span>
+              </div>
+            </div>
+
+            {/* Lovable - 3 minutes = 180 seconds = 100% bar */}
+            <div className="flex items-center gap-4">
+              <div className="w-24 text-right">
+                <span className="text-[#6B6B6B]">Lovable</span>
+              </div>
+              <div className="flex-1 h-10 bg-[#E8E4E0] rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-[#9A9A9A] rounded-full"
+                  style={{ width: '100%' }}
+                >
+                </div>
+              </div>
+              <div className="w-28 text-left">
+                <span className="text-lg font-bold text-[#6B6B6B]">3 min</span>
+              </div>
+            </div>
+          </div>
+
+          <p className="text-center text-sm text-[#9A9A9A] mt-6">
+            Results stream in real-time — start iterating while others are still building.
           </p>
         </motion.div>
 
@@ -770,7 +1184,7 @@ function ComparisonSection() {
           className="mb-24"
         >
           {/* Mobile Header */}
-          <div className="flex items-center justify-center gap-3 mb-8">
+          <div className="flex items-center justify-center gap-3 mb-10">
             <div className="h-px flex-1 bg-[#E8E4E0]" />
             <div className="flex items-center gap-3 bg-white border border-[#E8E4E0] rounded-full px-5 py-2">
               <span className="text-sm font-medium text-[#1A1A1A]">Mobile App</span>
@@ -780,34 +1194,36 @@ function ComparisonSection() {
             <div className="h-px flex-1 bg-[#E8E4E0]" />
           </div>
 
-          {/* Mobile Phones Grid - All same size */}
-          <div className="flex flex-wrap justify-center items-end gap-4 md:gap-6">
-            <div className="w-36 md:w-44">
+          {/* Mobile Phones Grid - BIGGER */}
+          <div className="flex flex-wrap justify-center items-end gap-6 md:gap-10">
+            <div className="w-48 md:w-56 lg:w-64">
               <PhoneMockup
                 image={COMPARISON_IMAGES.mobile.opendesign}
                 label="OpenDesign"
                 isHero
+                onClick={() => setLightbox({ type: "mobile", index: 0 })}
               />
             </div>
-            <div className="w-36 md:w-44">
+            <div className="w-48 md:w-56 lg:w-64">
               <PhoneMockup
                 image={COMPARISON_IMAGES.mobile.v0}
                 label="v0"
+                onClick={() => setLightbox({ type: "mobile", index: 1 })}
               />
             </div>
-            <div className="w-36 md:w-44">
+            <div className="w-48 md:w-56 lg:w-64">
               <PhoneMockup
                 image={COMPARISON_IMAGES.mobile.lovable}
                 label="Lovable"
-              />
-            </div>
-            <div className="w-36 md:w-44">
-              <PhoneMockup
-                image={COMPARISON_IMAGES.mobile.replit}
-                label="Replit"
+                onClick={() => setLightbox({ type: "mobile", index: 2 })}
               />
             </div>
           </div>
+
+          {/* Click hint */}
+          <p className="text-center text-sm text-[#9A9A9A] mt-6">
+            Click any phone to compare full-screen
+          </p>
         </motion.div>
 
         {/* ============ DESKTOP COMPARISON ============ */}
@@ -818,7 +1234,7 @@ function ComparisonSection() {
           viewport={{ once: true, margin: "-100px" }}
         >
           {/* Desktop Header */}
-          <div className="flex items-center justify-center gap-3 mb-8">
+          <div className="flex items-center justify-center gap-3 mb-10">
             <div className="h-px flex-1 bg-[#E8E4E0]" />
             <div className="flex items-center gap-3 bg-white border border-[#E8E4E0] rounded-full px-5 py-2">
               <span className="text-sm font-medium text-[#1A1A1A]">Desktop Website</span>
@@ -828,27 +1244,37 @@ function ComparisonSection() {
             <div className="h-px flex-1 bg-[#E8E4E0]" />
           </div>
 
-          {/* Desktop - OpenDesign (left, larger) + Competitors (right, stacked) */}
-          <div className="grid md:grid-cols-[1.4fr_1fr] gap-6 items-center">
-            {/* OpenDesign - Hero */}
+          {/* Desktop Layout: OpenDesign (60%) | v0 + Lovable stacked (40%) */}
+          <div className="grid md:grid-cols-[3fr_2fr] gap-6 items-center max-w-5xl mx-auto">
+            {/* OpenDesign - Hero (left side) */}
             <BrowserMockup
               image={COMPARISON_IMAGES.desktop.opendesign}
               label="OpenDesign"
               isHero
+              onClick={() => setLightbox({ type: "desktop", index: 0 })}
             />
 
-            {/* Competitors - Stacked vertically */}
+            {/* Competitors - Stacked vertically (right side) */}
             <div className="flex flex-col gap-4">
               <BrowserMockup
                 image={COMPARISON_IMAGES.desktop.v0}
                 label="v0"
+                compact
+                onClick={() => setLightbox({ type: "desktop", index: 1 })}
               />
               <BrowserMockup
                 image={COMPARISON_IMAGES.desktop.lovable}
                 label="Lovable"
+                compact
+                onClick={() => setLightbox({ type: "desktop", index: 2 })}
               />
             </div>
           </div>
+
+          {/* Click hint */}
+          <p className="text-center text-sm text-[#9A9A9A] mt-6">
+            Click any browser to compare full-screen
+          </p>
         </motion.div>
 
         {/* Caption */}
