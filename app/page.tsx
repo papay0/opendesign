@@ -38,6 +38,8 @@ import {
   ChefHat,
   Plane,
   Music,
+  Play,
+  MousePointerClick,
   LucideIcon,
 } from "lucide-react";
 import { PLANS, MESSAGE_PACK } from "@/lib/constants/plans";
@@ -89,22 +91,22 @@ const staggerContainer = {
 
 const features = [
   {
+    icon: MousePointerClick,
+    title: "Real Navigation, Not Mockups",
+    description:
+      "Click buttons. Tap links. Navigate between screens. Your prototype works like the real thing.",
+  },
+  {
+    icon: Play,
+    title: "Test It in Play Mode",
+    description:
+      "Enter full-screen Play mode and experience your app. Find UX issues before you write any code.",
+  },
+  {
     icon: Sparkles,
-    title: "Generate with AI",
+    title: "Watch It Generate Live",
     description:
-      "Describe your vision in plain English. Our AI transforms your ideas into beautiful, production-ready designs.",
-  },
-  {
-    icon: Pencil,
-    title: "Iterate Naturally",
-    description:
-      "Refine your designs through conversation. Request changes and see them come to life instantly.",
-  },
-  {
-    icon: Code2,
-    title: "Export Clean Code",
-    description:
-      "Get HTML and Tailwind CSS that's ready for production. Copy, paste, and ship.",
+      "See your screens appear in real-time as the AI builds them. No waiting, no refreshing.",
   },
 ];
 
@@ -171,27 +173,27 @@ const useCases = [
   {
     title: "Startup Founders",
     description:
-      "Validate app ideas visually before investing in design. Create pitch deck mockups for investor meetings.",
+      "Show investors a working prototype, not slides. Let them click through your app idea in real-time.",
   },
   {
     title: "Indie Developers",
     description:
-      "Prototype app ideas without hiring a designer. Generate starting point designs to iterate from.",
+      "Skip the design phase. Generate a clickable prototype in minutes and start building what matters.",
   },
   {
     title: "Product Managers",
     description:
-      "Visualize feature ideas for stakeholder presentations. Communicate product vision to engineering teams.",
+      "Get stakeholder buy-in with prototypes they can actually test. No more explaining wireframes.",
   },
   {
-    title: "Hackathon Builders",
+    title: "Hackathon Teams",
     description:
-      "Rapidly create polished UI for demo day. Go from idea to demo in hours, not days.",
+      "Ship a polished demo on day one. Focus on your backend while AI handles the frontend.",
   },
   {
     title: "Freelancers & Agencies",
     description:
-      "Generate initial concepts for client presentations. Explore multiple design directions quickly.",
+      "Win more clients with interactive prototypes. Show three concepts in the time it takes to make one.",
   },
 ];
 
@@ -486,7 +488,7 @@ function HeroSection() {
   };
 
   return (
-    <section className="pt-32 pb-24 px-6 overflow-hidden" aria-label="AI App Designer Hero">
+    <section className="pt-32 pb-24 px-6 overflow-hidden" aria-label="AI App Prototyper Hero">
       <div className="max-w-7xl mx-auto">
         {/* Two-column layout: Content left, Video right (video is larger) */}
         <div className="grid lg:grid-cols-[1fr_1.3fr] gap-12 lg:gap-10 items-center">
@@ -511,7 +513,7 @@ function HeroSection() {
               </a>
               <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#E8E4E0] bg-white/50 text-sm text-[#6B6B6B]">
                 <Sparkles className="w-4 h-4 text-[#B8956F]" />
-                1,000+ designs created
+                1,000+ prototypes created
               </span>
             </motion.div>
 
@@ -522,8 +524,8 @@ function HeroSection() {
               animate="visible"
               className="font-serif text-5xl md:text-6xl lg:text-7xl text-[#1A1A1A] tracking-tight leading-[1.05] mb-6"
             >
-              AI App Designer.{" "}
-              <span className="text-[#B8956F] italic">Mockups in minutes.</span>
+              From Idea to Working Demo.{" "}
+              <span className="text-[#B8956F] italic">In 60 Seconds.</span>
             </motion.h1>
 
             {/* Subheadline */}
@@ -534,7 +536,8 @@ function HeroSection() {
               transition={{ delay: 0.1 }}
               className="text-xl text-[#6B6B6B] mb-10 leading-relaxed"
             >
-              From idea to beautiful mockups in minutes. Just describe what you want.
+              Describe your app. AI builds a clickable prototype with real navigation.
+              Test the user flow before writing a single line of code.
             </motion.p>
 
             {/* Main Input Form */}
@@ -551,7 +554,7 @@ function HeroSection() {
                   ref={textareaRef}
                   value={prompt}
                   onChange={handlePromptChange}
-                  placeholder="I want to design an app that..."
+                  placeholder="A fitness app with workout tracking, a recipe collection with cooking mode..."
                   rows={3}
                   className="w-full bg-transparent text-[#1A1A1A] placeholder-[#9A9A9A] text-lg px-4 py-3 resize-none focus:outline-none"
                 />
@@ -562,7 +565,7 @@ function HeroSection() {
                     disabled={isStreaming}
                     className="flex items-center gap-2 bg-[#B8956F] text-white font-medium px-5 py-2.5 rounded-xl hover:bg-[#A6845F] transition-colors disabled:opacity-50"
                   >
-                    Design it
+                    Generate it
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
@@ -626,13 +629,124 @@ function HeroSection() {
 }
 
 // ============================================================================
-// Component: Features Section
-// Clean grid with elegant cards
+// Component: Comparison Section
+// Show OpenDesign vs competitors - Mobile and Desktop
 // ============================================================================
 
-function FeaturesSection() {
+// Placeholder images - replace with real screenshots
+const COMPARISON_IMAGES = {
+  mobile: {
+    opendesign: "/images/comparison/mobile-opendesign.png",
+    v0: "/images/comparison/mobile-v0.png",
+    lovable: "/images/comparison/mobile-lovable.png",
+    replit: "/images/comparison/mobile-replit.png",
+    prompt: "Music streaming app",
+  },
+  desktop: {
+    opendesign: "/images/comparison/desktop-opendesign.png",
+    v0: "/images/comparison/desktop-v0.png",
+    lovable: "/images/comparison/desktop-lovable.png",
+    prompt: "Project management dashboard",
+  },
+};
+
+// Phone mockup frame component
+function PhoneMockup({
+  image,
+  label,
+  isHero = false
+}: {
+  image: string;
+  label: string;
+  isHero?: boolean;
+}) {
   return (
-    <section className="py-24 px-6 bg-[#F5F2EF]" aria-label="How OpenDesign AI App Designer Works">
+    <div className={`relative ${isHero ? "" : "opacity-75 hover:opacity-100 transition-opacity"}`}>
+      {/* Label */}
+      <div className={`absolute -top-2 left-1/2 -translate-x-1/2 z-10 text-xs font-medium px-3 py-0.5 rounded-full ${
+        isHero
+          ? "bg-[#B8956F] text-white"
+          : "bg-[#F5F2EF] text-[#6B6B6B] border border-[#E8E4E0]"
+      }`}>
+        {label}
+      </div>
+
+      {/* Phone Frame */}
+      <div className={`relative bg-[#1A1A1A] rounded-[2.5rem] p-2 ${isHero ? "shadow-2xl" : "shadow-lg"}`}>
+        {/* Screen */}
+        <div className={`relative bg-[#FAF8F5] rounded-[2rem] overflow-hidden ${isHero ? "aspect-[390/844]" : "aspect-[390/844]"}`}>
+          <img
+            src={image}
+            alt={`${label} mobile app output`}
+            className={`w-full h-full object-cover object-top ${isHero ? "" : "grayscale-[30%]"}`}
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              e.currentTarget.parentElement!.innerHTML = `<div class="w-full h-full flex items-center justify-center text-[#9A9A9A] text-sm"><span>${label}</span></div>`;
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Browser mockup frame component
+function BrowserMockup({
+  image,
+  label,
+  isHero = false
+}: {
+  image: string;
+  label: string;
+  isHero?: boolean;
+}) {
+  return (
+    <div className={`relative ${isHero ? "" : "opacity-75 hover:opacity-100 transition-opacity"}`}>
+      {/* Label */}
+      <div className={`absolute -top-2 left-6 z-10 text-xs font-medium px-3 py-0.5 rounded-full ${
+        isHero
+          ? "bg-[#B8956F] text-white"
+          : "bg-[#F5F2EF] text-[#6B6B6B] border border-[#E8E4E0]"
+      }`}>
+        {label}
+      </div>
+
+      {/* Browser Frame */}
+      <div className={`bg-white rounded-lg overflow-hidden border ${isHero ? "border-[#B8956F] border-2 shadow-xl" : "border-[#E8E4E0] shadow-md"}`}>
+        {/* Browser Chrome */}
+        <div className="bg-[#F5F2EF] px-3 py-2 flex items-center gap-2 border-b border-[#E8E4E0]">
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-[#FF5F57]" />
+            <div className="w-2.5 h-2.5 rounded-full bg-[#FEBC2E]" />
+            <div className="w-2.5 h-2.5 rounded-full bg-[#28C840]" />
+          </div>
+          <div className="flex-1 ml-2">
+            <div className="bg-white rounded px-3 py-1 text-[10px] text-[#9A9A9A] max-w-[200px]">
+              localhost:3000
+            </div>
+          </div>
+        </div>
+
+        {/* Screen */}
+        <div className="aspect-[16/10] bg-[#FAF8F5] overflow-hidden">
+          <img
+            src={image}
+            alt={`${label} desktop output`}
+            className={`w-full h-full object-cover object-top ${isHero ? "" : "grayscale-[30%]"}`}
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              e.currentTarget.parentElement!.innerHTML = `<div class="w-full h-full flex items-center justify-center text-[#9A9A9A] text-sm"><span>${label}</span></div>`;
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ComparisonSection() {
+  return (
+    <section className="py-24 px-6 bg-[#F5F2EF]" aria-label="OpenDesign vs Other AI Tools">
       <div className="max-w-6xl mx-auto">
         {/* Section Header */}
         <motion.div
@@ -640,45 +754,116 @@ function FeaturesSection() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
-          className="mb-16"
+          className="text-center mb-16"
         >
           <h2 className="font-serif text-4xl md:text-5xl text-[#1A1A1A] tracking-tight mb-4">
-            How the AI Design Generator Works
+            Same Prompt. Different Results.
           </h2>
-          <p className="text-lg text-[#6B6B6B] max-w-xl">
-            Create mobile and desktop app mockups in three simple steps
+          <p className="text-lg text-[#6B6B6B]">
+            See how OpenDesign compares to other AI tools.
           </p>
         </motion.div>
 
-        {/* Feature Cards */}
+        {/* ============ MOBILE COMPARISON ============ */}
         <motion.div
-          variants={staggerContainer}
+          variants={slideUp}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
-          className="grid md:grid-cols-3 gap-6"
+          className="mb-24"
         >
-          {features.map((feature, index) => (
-            <motion.div
-              key={index}
-              variants={slideUp}
-              className="bg-white border border-[#E8E4E0] rounded-2xl p-8 hover:border-[#D4CFC9] hover:shadow-sm transition-all"
-            >
-              {/* Icon */}
-              <div className="w-12 h-12 rounded-xl bg-[#FAF8F5] border border-[#E8E4E0] flex items-center justify-center mb-6">
-                <feature.icon className="w-5 h-5 text-[#B8956F]" />
-              </div>
+          {/* Mobile Header */}
+          <div className="flex items-center justify-center gap-3 mb-8">
+            <div className="h-px flex-1 bg-[#E8E4E0]" />
+            <div className="flex items-center gap-3 bg-white border border-[#E8E4E0] rounded-full px-5 py-2">
+              <span className="text-sm font-medium text-[#1A1A1A]">Mobile App</span>
+              <span className="text-[#9A9A9A]">•</span>
+              <code className="text-sm font-mono text-[#6B6B6B]">&quot;{COMPARISON_IMAGES.mobile.prompt}&quot;</code>
+            </div>
+            <div className="h-px flex-1 bg-[#E8E4E0]" />
+          </div>
 
-              {/* Content */}
-              <h3 className="font-serif text-xl text-[#1A1A1A] mb-3">
-                {feature.title}
-              </h3>
-              <p className="text-[#6B6B6B] leading-relaxed">
-                {feature.description}
-              </p>
-            </motion.div>
-          ))}
+          {/* Mobile Phones Grid - All same size */}
+          <div className="flex flex-wrap justify-center items-end gap-4 md:gap-6">
+            <div className="w-36 md:w-44">
+              <PhoneMockup
+                image={COMPARISON_IMAGES.mobile.opendesign}
+                label="OpenDesign"
+                isHero
+              />
+            </div>
+            <div className="w-36 md:w-44">
+              <PhoneMockup
+                image={COMPARISON_IMAGES.mobile.v0}
+                label="v0"
+              />
+            </div>
+            <div className="w-36 md:w-44">
+              <PhoneMockup
+                image={COMPARISON_IMAGES.mobile.lovable}
+                label="Lovable"
+              />
+            </div>
+            <div className="w-36 md:w-44">
+              <PhoneMockup
+                image={COMPARISON_IMAGES.mobile.replit}
+                label="Replit"
+              />
+            </div>
+          </div>
         </motion.div>
+
+        {/* ============ DESKTOP COMPARISON ============ */}
+        <motion.div
+          variants={slideUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+        >
+          {/* Desktop Header */}
+          <div className="flex items-center justify-center gap-3 mb-8">
+            <div className="h-px flex-1 bg-[#E8E4E0]" />
+            <div className="flex items-center gap-3 bg-white border border-[#E8E4E0] rounded-full px-5 py-2">
+              <span className="text-sm font-medium text-[#1A1A1A]">Desktop Website</span>
+              <span className="text-[#9A9A9A]">•</span>
+              <code className="text-sm font-mono text-[#6B6B6B]">&quot;{COMPARISON_IMAGES.desktop.prompt}&quot;</code>
+            </div>
+            <div className="h-px flex-1 bg-[#E8E4E0]" />
+          </div>
+
+          {/* Desktop - OpenDesign (left, larger) + Competitors (right, stacked) */}
+          <div className="grid md:grid-cols-[1.4fr_1fr] gap-4 items-start">
+            {/* OpenDesign - Hero */}
+            <BrowserMockup
+              image={COMPARISON_IMAGES.desktop.opendesign}
+              label="OpenDesign"
+              isHero
+            />
+
+            {/* Competitors - Stacked */}
+            <div className="flex flex-col gap-4">
+              <BrowserMockup
+                image={COMPARISON_IMAGES.desktop.v0}
+                label="v0"
+              />
+              <BrowserMockup
+                image={COMPARISON_IMAGES.desktop.lovable}
+                label="Lovable"
+              />
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Caption */}
+        <motion.p
+          variants={fadeIn}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          className="text-center text-sm text-[#6B6B6B] mt-12"
+        >
+          All outputs generated with default settings. No manual editing.
+        </motion.p>
       </div>
     </section>
   );
@@ -702,10 +887,10 @@ function UseCasesSection() {
           className="mb-16"
         >
           <h2 className="font-serif text-4xl md:text-5xl text-[#1A1A1A] tracking-tight mb-4">
-            Who Uses OpenDesign
+            Built for Builders
           </h2>
           <p className="text-lg text-[#6B6B6B] max-w-xl">
-            From solo founders to agencies, anyone can create professional app mockups
+            From pitch decks to hackathon demos, get a working prototype before lunch.
           </p>
         </motion.div>
 
@@ -1022,7 +1207,7 @@ function PricingSection() {
               <p className="mt-4 text-sm text-[#6B6B6B] leading-relaxed">
                 Each AI generation request counts as one message. This includes
                 creating new screens and editing existing ones. Viewing, exporting,
-                or navigating your designs does not count.
+                or navigating your prototypes does not count.
               </p>
             </motion.details>
 
@@ -1038,7 +1223,7 @@ function PricingSection() {
               </summary>
               <p className="mt-4 text-sm text-[#6B6B6B] leading-relaxed">
                 Flash is faster and great for quick iterations. Pro produces higher
-                quality designs with more attention to detail. Free users have access
+                quality prototypes with more attention to detail. Free users have access
                 to Flash only, while Pro subscribers can use both.
               </p>
             </motion.details>
@@ -1097,18 +1282,18 @@ function CTASection() {
         className="max-w-4xl mx-auto text-center"
       >
         <h2 className="font-serif text-4xl md:text-5xl text-white tracking-tight mb-6">
-          Start Designing Your App Today
+          Your Next Prototype is 60 Seconds Away
         </h2>
         <p className="text-lg text-zinc-400 mb-10 max-w-xl mx-auto">
-          Create beautiful mobile and desktop UI mockups in minutes with AI.
-          Open source, free forever — just bring your own API key.
+          Describe it. Generate it. Click through it.
+          Open source, no account required with BYOK.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <SignedOut>
             <SignUpButton mode="modal">
               <button className="flex items-center gap-2 bg-[#B8956F] text-white font-medium px-8 py-3.5 rounded-xl hover:bg-[#A6845F] transition-colors text-lg">
-                Get Started
+                Start Building
                 <ArrowRight className="w-5 h-5" />
               </button>
             </SignUpButton>
@@ -1222,8 +1407,7 @@ export default function LandingPage() {
       <Header />
       <main>
         <HeroSection />
-        <FeaturesSection />
-        <UseCasesSection />
+        <ComparisonSection />
         <PricingSection />
         <CTASection />
       </main>
