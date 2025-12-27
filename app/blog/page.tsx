@@ -5,13 +5,13 @@ import { ArrowRight, Calendar, Clock } from "lucide-react";
 import { Logo } from "@/components/Logo";
 
 export const metadata: Metadata = {
-  title: "Blog - AI App Design Insights & Tutorials",
+  title: "Blog - The Prototyping Guide | OpenDesign",
   description:
-    "Learn about AI-powered app design, UI/UX best practices, and how to create professional mockups without design skills. Tips for founders, developers, and creators.",
+    "Learn how product teams use prototyping to validate ideas faster. Practical guides for PMs, designers, and founders building digital products.",
   openGraph: {
-    title: "OpenDesign Blog - AI App Design Insights",
+    title: "OpenDesign Blog - The Prototyping Guide",
     description:
-      "Learn about AI-powered app design, UI/UX best practices, and how to create professional mockups.",
+      "Learn how product teams use prototyping to validate ideas faster. Practical guides for PMs, designers, and founders.",
   },
 };
 
@@ -43,11 +43,11 @@ export default function BlogPage() {
             OpenDesign Blog
           </span>
           <h1 className="font-serif text-4xl md:text-5xl text-[#1A1A1A] tracking-tight mb-4">
-            Insights & Tutorials
+            The Prototyping Guide
           </h1>
           <p className="text-lg text-[#6B6B6B] max-w-2xl">
-            Learn about AI-powered app design, best practices for creating
-            professional UI mockups, and tips for founders and developers.
+            Learn how product teams use prototyping to validate ideas faster.
+            Practical guides for PMs, designers, and founders building digital products.
           </p>
         </div>
       </section>
@@ -122,10 +122,10 @@ export default function BlogPage() {
       <section className="py-16 px-6 bg-[#1A1A1A]">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="font-serif text-3xl text-white tracking-tight mb-4">
-            Ready to try AI-powered design?
+            Ready to prototype your idea?
           </h2>
           <p className="text-zinc-400 mb-8">
-            Create beautiful app mockups in minutes. Open source and free to
+            Create interactive prototypes in seconds. Open source and free to
             use.
           </p>
           <Link
